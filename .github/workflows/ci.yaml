@@ -4,10 +4,8 @@ on:
     tags:
       - v*
 
-env:
-  CRATE_NAME: mihomosh
-  GITHUB_TOKEN: ${{ github.token }}
-  RUST_BACKTRACE: 1
+permissions:
+  contents: write
 
 jobs:
   release:
