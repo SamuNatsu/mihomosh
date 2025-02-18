@@ -1,0 +1,38 @@
+### Mihomosh configuration
+
+## Default editor (REQUIRED)
+editor: vim
+
+## Mihomo config file path (REQUIRED)
+mihomo_path: /etc/mihomo/config.yaml
+
+## Mihomo RESTful API entry point (REQUIRED)
+mihomo_api: http://localhost:9090
+
+## Mihomo RESTful API authorization token (Optional)
+# mihomo_token: <YOUR TOKEN>
+
+## Mode (REQUIRED; One of "direct", "rule" or "global")
+mode: rule
+
+## Mixed port (REQUIRED)
+mixed_port: 7890
+
+## Socks port (Optional)
+# socks_port: 7891
+
+## HTTP(S) port (Optional)
+# http_port: 7892
+
+## Allow LAN (Default: false)
+# allow_lan: false
+
+## Allow IPv6 (Default: false)
+# allow_ipv6: false
+
+## Global extend configs (Optional)
+# extend_configs: {}
+
+## Global extend scripts (Optional)
+# extend_scripts: |
+#   function main(config) {}

@@ -1,0 +1,29 @@
+### Mihomo utils profile configuration
+
+## Profile name (REQUIRED)
+name: New profile
+
+## Profile type (REQUIRED; One of "remote" or "local")
+type: local
+
+## Profile URL (Required only when `type` is "remote")
+# url: https://example.com
+
+## Profile user agent (Required only when `type` is "remote")
+# user_agent: mihomo-utils/v<CARGO_PKG_VERSION> (clash-verge)
+
+## Whether to use proxy to update the profile
+## (Default: "none"; One of "none", "system" or "mihomo")
+# use_proxy: none
+
+## Whether to allow the invalid certificates (Default: false)
+# allow_invalid_certs: false
+
+## Extend configs (Optional)
+# extend_configs: {}
+
+## Extend scripts (Optional)
+# extend_scripts: |
+#   function main(config) {
+#     return config;
+#   }
