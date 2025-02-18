@@ -41,8 +41,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup OpenSSL (Linux)
-        run: apt install make
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
         with:
