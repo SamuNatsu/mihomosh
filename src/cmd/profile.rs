@@ -297,18 +297,16 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
             .with_context(|| format!("try to get profile metadata by `{}`", uuid_or_name))?
             .clone();
 
-        // Load config
-        let path = path::get_profile_conf_dir().join(format!("{}.yaml", meta.uuid));
-        let contents = fs::read_to_string(&path)
-            .with_context(|| format!("try to read file `{}`", path.display()))?;
-        let profile = serde_yaml::from_str::<ProfileConfig>(&contents)
-            .with_context(|| format!("try to parse profile config `{}`", path.display()))?;
+        // Get profile config
+        let conf = meta
+            .try_get_conf()
+            .with_context(|| format!("try to get profile config by UUID `{}`", meta.uuid))?;
 
         // Fetch
-        let (used, total, expired_at) = profile
+        let (used, total, expired_at) = conf
             .fetch()
             .await
-            .with_context(|| format!("try to fetch profile data `{}`", path.display()))?;
+            .with_context(|| format!("try to fetch profile data by UUID `{}`", meta.uuid))?;
 
         // Update metadata
         let name = meta.name.clone();
@@ -324,20 +322,22 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
         // Create tasks
         let mut set = JoinSet::new();
         for uuid in metas.iter().filter(|(_, v)| v.remote).map(|(k, _)| k) {
-            let uuid = uuid.clone();
-            let path = path::get_profile_conf_dir().join(format!("{}.yaml", uuid));
-            let contents = fs::read_to_string(&path)
-                .with_context(|| format!("try to read file `{}`", path.display()))?;
-            let profile = serde_yaml::from_str::<ProfileConfig>(&contents)
-                .with_context(|| format!("try to load profile config `{}`", path.display()))?;
+            let uuid = uuid.to_owned();
+            let meta = metas
+                .try_get_meta(&uuid)
+                .with_context(|| format!("try to get profile metadata by `{}`", uuid))?
+                .clone();
+            let conf = meta
+                .try_get_conf()
+                .with_context(|| format!("try to get profile config by UUID `{}`", meta.uuid))?;
             set.spawn(async move {
-                let r = profile.fetch().await;
+                let r = conf.fetch().await;
                 match &r {
                     Ok(_) => println!(
                         "{}",
                         console::style(format!(
                             "Profile `{}` with UUID `{}` updated",
-                            profile.name, uuid
+                            conf.name, uuid
                         ))
                         .green()
                     ),
@@ -345,7 +345,7 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
                         "{}",
                         console::style(format!(
                             "Profile `{}` with UUID `{}` fail to update: {}",
-                            profile.name, uuid, err
+                            conf.name, uuid, err
                         ))
                         .red()
                     ),
