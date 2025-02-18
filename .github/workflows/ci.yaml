@@ -4,6 +4,11 @@ on:
     tags:
       - v*
 
+env:
+  CRATE_NAME: mihomosh
+  GITHUB_TOKEN: ${{ github.token }}
+  RUST_BACKTRACE: 1
+
 jobs:
   release:
     strategy:
