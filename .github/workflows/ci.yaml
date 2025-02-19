@@ -1,8 +1,5 @@
 name: CI
-on:
-  push:
-    tags:
-      - v*
+on: push
 
 permissions:
   contents: write
@@ -58,4 +55,3 @@ jobs:
         with:
           executable-name: mihomosh
           target: ${{ matrix.platform.target }}
-          changes-file: ""
