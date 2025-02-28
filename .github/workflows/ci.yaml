@@ -54,11 +54,11 @@ jobs:
 
       - name: Setup UPX for Linux
         run: sudo apt install -y upx
-        if: ${{ runner.os == 'ubuntu-latest' }}
+        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
       - name: Compress binary target for Linux
         run: upx --best --lzma target/release/mihomosh
-        if: ${{ runner.os == 'ubuntu-latest' }}
+        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
