@@ -13,34 +13,45 @@ jobs:
             runs-on: ubuntu-latest
             target: x86_64-unknown-freebsd
             skip-upx: true
+
           - os-name: Linux-i686
             runs-on: ubuntu-latest
             target: i686-unknown-linux-musl
+
           - os-name: Linux-x86_64
             runs-on: ubuntu-latest
             target: x86_64-unknown-linux-musl
+
           - os-name: Linux-aarch64
             runs-on: ubuntu-latest
             target: aarch64-unknown-linux-musl
+
           - os-name: Linux-riscv64
             runs-on: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             skip-upx: true
+
           - os-name: Windows-i686
             runs-on: windows-latest
             target: i686-pc-windows-msvc
+
           - os-name: Windows-x86_64
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
+
           - os-name: Windows-aarch64
             runs-on: windows-latest
             target: aarch64-pc-windows-msvc
+            skip-upx: true
+
           - os-name: macOS-x86_64
             runs-on: macOS-latest
             target: x86_64-apple-darwin
+
           - os-name: macOS-aarch64
             runs-on: macOS-latest
             target: aarch64-apple-darwin
+
     name: Release - ${{ matrix.platform.os-name }}
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
@@ -54,11 +65,11 @@ jobs:
           args: "--locked --release"
           strip: false
 
-      - name: Setup UPX for Linux
+      - name: Setup UPX for Linux platform
         run: sudo apt install -y upx
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
-      - name: Compress binary target for Linux
+      - name: Compress binary target for Linux platform
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' && !matrix.platform.skip-upx }}
 
