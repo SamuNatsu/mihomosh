@@ -12,6 +12,7 @@ jobs:
           - os-name: FreeBSD-x86_64
             runs-on: ubuntu-latest
             target: x86_64-unknown-freebsd
+            skip-upx: true
           - os-name: Linux-i686
             runs-on: ubuntu-latest
             target: i686-unknown-linux-musl
@@ -24,6 +25,7 @@ jobs:
           - os-name: Linux-riscv64
             runs-on: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
+            skip-upx: true
           - os-name: Windows-i686
             runs-on: windows-latest
             target: i686-pc-windows-msvc
@@ -58,7 +60,7 @@ jobs:
 
       - name: Compress binary target for Linux
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
-        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
+        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' && !matrix.platform.skip-upx }}
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
