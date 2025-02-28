@@ -57,7 +57,7 @@ jobs:
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
       - name: Compress binary target for Linux
-        run: upx --best --lzma target/release/mihomosh
+        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
       - name: Publish artifacts and release
