@@ -85,6 +85,10 @@ jobs:
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh.exe
         if: ${{ matrix.platform.runs-on == 'windows-latest' && !matrix.platform.skip-upx }}
 
+      - name: Compress binary target for MacOS platform
+        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
+        if: ${{ matrix.platform.runs-on == 'macOS-latest' && !matrix.platform.skip-upx }}
+
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
         with:
