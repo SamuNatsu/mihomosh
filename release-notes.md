@@ -1,3 +1,4 @@
 # Release Notes
 
-Apply binary minify through `UPX` for some Linux platforms
+Apply binary minify through `UPX` for some Windows platforms
+
