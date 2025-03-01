@@ -69,6 +69,10 @@ jobs:
         run: sudo apt install -y upx
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
 
+      - name: Setup UPX for Windows platform
+        run: choco install upx -y
+        if: ${{ matrix.platform.runs-on == 'windows-latest' }}
+
       - name: Compress binary target for Linux platform
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' && !matrix.platform.skip-upx }}
