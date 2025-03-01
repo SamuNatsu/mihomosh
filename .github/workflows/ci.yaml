@@ -73,9 +73,9 @@ jobs:
         run: choco install upx -y
         if: ${{ matrix.platform.runs-on == 'windows-latest' }}
 
-      - name: Setup UPX for MacOS platform
-        run: brew install upx
-        if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
+      # - name: Setup UPX for MacOS platform
+      #   run: brew install upx
+      #   if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
 
       - name: Compress binary target for Linux platform
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
@@ -85,9 +85,9 @@ jobs:
         run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh.exe
         if: ${{ matrix.platform.runs-on == 'windows-latest' && !matrix.platform.skip-upx }}
 
-      - name: Compress binary target for MacOS platform
-        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
-        if: ${{ matrix.platform.runs-on == 'macOS-latest' && !matrix.platform.skip-upx }}
+      # - name: Compress binary target for MacOS platform
+      #   run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
+      #   if: ${{ matrix.platform.runs-on == 'macOS-latest' && !matrix.platform.skip-upx }}
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
