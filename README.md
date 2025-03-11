@@ -15,6 +15,16 @@ A CLI Toolkit for Mihomo
 - Basic Mihomo running status display
 - Manual URL testing for activated profile
 
+## Install
+
+For Linux/MacOS and other \*nix OS:
+
+```sh
+curl -s https://installer.samunatsu.workers.dev/SamuNatsu/mihomosh | bash
+```
+
+For Windows, please download the binary from releases, the command line installation will be supported soon.
+
 ## Usage
 
 See [wiki](https://github.com/SamuNatsu/mihomosh/wiki).
