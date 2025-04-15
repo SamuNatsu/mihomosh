@@ -1,1 +1,5 @@
+# Build
 /target
+
+# Environment
+.env
