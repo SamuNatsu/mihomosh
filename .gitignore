@@ -3,3 +3,6 @@
 
 # Environment
 .env
+
+# Local files
+*.local
