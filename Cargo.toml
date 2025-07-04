@@ -1,0 +1,14 @@
+[package]
+name = "mihomosh"
+version = "2.0.0"
+edition = "2024"
+
+[profile.release]
+strip = true
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+
