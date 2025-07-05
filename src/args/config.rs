@@ -2,21 +2,20 @@ use clap::Subcommand;
 
 #[derive(Subcommand)]
 pub enum ConfigArgs {
-    /// Print all configs
-    GetAll,
-
-    /// Print specified config
-    Get {
-        /// Config key
-        key: String,
+    /// View configs
+    View {
+        /// Viewer to be used for viewing
+        #[arg(short, long, default_value = "less")]
+        viewer: String,
     },
 
-    /// Update specified config
-    Set {
-        /// Config key
-        key: String,
-
-        /// New config value
-        value: String,
+    /// Edit configs
+    Edit {
+        /// Editor to be used for editing
+        #[arg(short, long, default_value = "nano")]
+        editor: String,
     },
+
+    /// Reset configs
+    Reset,
 }
