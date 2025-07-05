@@ -63,7 +63,7 @@ impl Config {
             let path = Self::get_path();
             let file = File::open(&path).expect("fail to open config file");
 
-            serde_json::from_reader(&file).expect("fail to parse config file")
+            serde_yml::from_reader(&file).expect("fail to parse config file")
         })
     }
 
