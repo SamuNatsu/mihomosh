@@ -5,26 +5,102 @@ macro_rules! style_fmt {
     };
 }
 
+// Predefined formatted styled string
 #[macro_export]
-macro_rules! normal {
-    ($($arg:tt)*) => {{
-        println!("{}", console::style(format!($($arg)*)).bright().black());
-        Ok(())
-    }};
+macro_rules! str_primary {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg)*).bold().bright().blue().to_string()
+    };
 }
 
 #[macro_export]
-macro_rules! success {
-    ($($arg:tt)*) => {{
-        println!("{}", console::style(format!($($arg)*)).bold().bright().green());
-        Ok(())
-    }};
+macro_rules! str_secondary {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg)*).italic().bright().black().to_string()
+    };
 }
 
 #[macro_export]
-macro_rules! fail {
-    ($($arg:tt)*) => {{
-        println!("{}", console::style(format!($($arg)*)).bold().bright().red());
-        Ok(())
-    }};
+macro_rules! str_success {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg)*).bold().bright().green().to_string()
+    };
+}
+
+#[macro_export]
+macro_rules! str_warn {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg:tt)*).bold().bright().yellow().to_string()
+    };
+}
+
+#[macro_export]
+macro_rules! str_help {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg:tt)*).underline().cyan().to_string()
+    };
+}
+
+#[macro_export]
+macro_rules! str_danger {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg)*).bold().bright().red().to_string()
+    };
+}
+
+#[macro_export]
+macro_rules! str_contrast {
+    ($($arg:tt)*) => {
+        $crate::style_fmt!($($arg:tt)*).bold().bright().white().on_black().to_string()
+    };
+}
+
+// Print line predefined formatted styled string
+#[macro_export]
+macro_rules! println_primary {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_primary!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_secondary {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_secondary!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_success {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_success!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_warn {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_warn!($($arg:tt)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_help {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_help!($($arg:tt)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_danger {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_danger!($($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! println_contrast {
+    ($($arg:tt)*) => {
+        println!("{}", $crate::str_contrast!($($arg:tt)*))
+    };
 }

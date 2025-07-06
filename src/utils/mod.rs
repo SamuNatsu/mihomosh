@@ -12,6 +12,8 @@ use std::{
 use anyhow::{Context, Result};
 use directories::ProjectDirs;
 
+use crate::str_primary;
+
 pub fn get_data_dir() -> &'static PathBuf {
     static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
     INSTANCE.get_or_init(|| {
@@ -29,7 +31,7 @@ pub fn get_data_dir() -> &'static PathBuf {
 }
 
 pub fn prompt<S: AsRef<str>>(prompt: S) -> Result<String> {
-    print!("{}", console::style(prompt.as_ref()).bright().yellow());
+    print!("{}", str_primary!("{}", prompt.as_ref()));
     io::stdout().flush()?;
 
     let mut input = String::new();

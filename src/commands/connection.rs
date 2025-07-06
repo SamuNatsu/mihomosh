@@ -3,7 +3,9 @@ use chrono::{DateTime, Local, Utc};
 use tokio::task::JoinSet;
 use wildcard::Wildcard;
 
-use crate::{fail, models::config::Config, normal, style_fmt, success};
+use crate::{
+    models::config::Config, println_danger, println_secondary, println_success, style_fmt,
+};
 
 pub async fn view() -> Result<()> {
     let mut conns = Config::get_instance().get_api().get_connections().await?;
@@ -86,7 +88,8 @@ pub async fn close(
             .get_api()
             .close_all_connections()
             .await?;
-        return success!("All connection closed");
+        println_success!("All connection closed");
+        return Ok(());
     }
 
     // Filtering
@@ -184,20 +187,15 @@ pub async fn close(
         filtered.push(conn);
     }
 
-    println!(
-        "{}",
-        style_fmt!("{} connections founded.", filtered.len())
-            .italic()
-            .bright()
-            .black()
-    );
+    println_secondary!("{} connection(s) found", filtered.len());
 
     // Close
     if filtered.len() == 0 {
-        return normal!("No connection to be closed");
+        println_success!("No connection to be closed");
+        return Ok(());
     }
 
-    let mut tasks = JoinSet::<Result<()>>::new();
+    let mut tasks = JoinSet::new();
     for conn in filtered {
         tasks.spawn(async move {
             let ret = Config::get_instance()
@@ -205,8 +203,27 @@ pub async fn close(
                 .close_connection(&conn.id)
                 .await;
             match ret {
-                Ok(_) => success!("Connection `{}` closed", conn.id),
-                Err(err) => fail!("Fail to close `{}`: {}", conn.id, err),
+                Ok(_) => println_success!(
+                    "Closed: process={} dst={}:{}",
+                    conn.metadata.process,
+                    if conn.metadata.host.is_empty() {
+                        conn.metadata.destination_ip
+                    } else {
+                        conn.metadata.host
+                    },
+                    conn.metadata.destination_port
+                ),
+                Err(err) => println_danger!(
+                    "Fail: process={} dst={}:{} err={}",
+                    conn.metadata.process,
+                    if conn.metadata.host.is_empty() {
+                        conn.metadata.destination_ip
+                    } else {
+                        conn.metadata.host
+                    },
+                    conn.metadata.destination_port,
+                    err
+                ),
             }
         });
     }

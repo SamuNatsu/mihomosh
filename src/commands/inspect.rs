@@ -1,16 +1,10 @@
 use anyhow::{Result, bail};
 use futures::StreamExt;
 
-use crate::{models::config::Config, success};
+use crate::{models::config::Config, println_primary, println_success};
 
 pub async fn log() -> Result<()> {
-    println!(
-        "{}",
-        console::style("Start tracing Mihomo logs...")
-            .bold()
-            .bright()
-            .green()
-    );
+    println_primary!("Start tracing Mihomo logs...");
 
     // Create stream
     let api = Config::get_instance().get_api();
@@ -33,13 +27,7 @@ pub async fn log() -> Result<()> {
 }
 
 pub async fn traffic() -> Result<()> {
-    println!(
-        "{}",
-        console::style("Start tracing Mihomo traffic...")
-            .bold()
-            .bright()
-            .green()
-    );
+    println_primary!("Start tracing Mihomo traffic...");
 
     // Create stream
     let api = Config::get_instance().get_api();
@@ -60,13 +48,7 @@ pub async fn traffic() -> Result<()> {
 }
 
 pub async fn memory() -> Result<()> {
-    println!(
-        "{}",
-        console::style("Start tracing Mihomo memory usage...")
-            .bold()
-            .bright()
-            .green()
-    );
+    println_primary!("Start tracing Mihomo memory usage...");
 
     // Create stream
     let api = Config::get_instance().get_api();
@@ -84,7 +66,8 @@ pub async fn memory() -> Result<()> {
 
 pub async fn version() -> Result<()> {
     let version = Config::get_instance().get_api().get_version().await?;
-    success!("Mihomo version: {version}")
+    println_success!("Mihomo version: {version}");
+    Ok(())
 }
 
 fn get_colored_number<S: AsRef<str>>(num: u64, suffix: S) -> String {
