@@ -9,8 +9,8 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use crate::{
-    args::{Args, config::ConfigArgs, inspect::InspectArgs},
-    commands::{config, inspect},
+    args::{Args, config::ConfigArgs, connection::ConnectionArgs, inspect::InspectArgs},
+    commands::{config, connection, inspect},
 };
 
 #[tokio::main]
@@ -26,6 +26,18 @@ async fn main() -> Result<()> {
             InspectArgs::Traffic => inspect::traffic().await?,
             InspectArgs::Memory => inspect::memory().await?,
             InspectArgs::Version => inspect::version().await?,
+        },
+        Args::Connection(args) => match args {
+            ConnectionArgs::View => connection::view().await?,
+            ConnectionArgs::Close {
+                r#type,
+                host,
+                process,
+                source,
+                destination,
+                chain,
+                rule,
+            } => connection::close(r#type, host, process, source, destination, chain, rule).await?,
         },
         Args::ShellCompletion { shell } => {
             let mut cmd = Args::command();

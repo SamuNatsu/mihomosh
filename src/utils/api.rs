@@ -148,17 +148,20 @@ impl Api {
 
     pub async fn flush_fake_ip_cache(&self) -> Result<()> {
         let url = format!("{}/cache/fakeip/flush", self.api);
-        Client::new().post(url).send().await?.error_for_status()?;
-
+        self.create_request_builder(Method::POST, url)?
+            .send()
+            .await?
+            .error_for_status()?;
         Ok(())
     }
 
     pub async fn get_proxies(&self) -> Result<Vec<resp::Proxy>> {
         let url = format!("{}/version", self.api);
-        let ret = Client::new()
-            .get(url)
+        let ret = self
+            .create_request_builder(Method::GET, url)?
             .send()
             .await?
+            .error_for_status()?
             .json::<Value>()
             .await?
             .as_object()
@@ -182,13 +185,11 @@ impl Api {
             urlencoding::encode(proxy.as_ref())
         );
         let body = serde_json::to_string(&json!({ "name": name.as_ref() }))?;
-        Client::new()
-            .put(url)
+        self.create_request_builder(Method::PUT, url)?
             .body(body)
             .send()
             .await?
             .error_for_status()?;
-
         Ok(())
     }
 
@@ -204,10 +205,11 @@ impl Api {
             urlencoding::encode(url.as_ref()),
             delay
         );
-        let ret = Client::new()
-            .get(url)
+        let ret = self
+            .create_request_builder(Method::GET, url)?
             .send()
             .await?
+            .error_for_status()?
             .json::<Value>()
             .await?
             .as_object()
@@ -218,6 +220,47 @@ impl Api {
             .ok_or(anyhow!("invalid response body"))?;
 
         Ok(ret)
+    }
+
+    pub async fn get_connections(&self) -> Result<Vec<resp::Connection>> {
+        let url = format!("{}/connections", self.api);
+        let ret = self
+            .create_request_builder(Method::GET, url)?
+            .send()
+            .await?
+            .error_for_status()?
+            .json::<Value>()
+            .await?
+            .as_object()
+            .ok_or(anyhow!("invalid response body"))?
+            .get("connections")
+            .ok_or(anyhow!("invalid response body"))?
+            .clone();
+        let ret = serde_json::from_value::<Vec<resp::Connection>>(ret)?;
+
+        Ok(ret)
+    }
+
+    pub async fn close_all_connections(&self) -> Result<()> {
+        let url = format!("{}/connections", self.api);
+        self.create_request_builder(Method::DELETE, url)?
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
+
+    pub async fn close_connection<S: AsRef<str>>(&self, id: S) -> Result<()> {
+        let url = format!(
+            "{}/connections/{}",
+            self.api,
+            urlencoding::encode(id.as_ref())
+        );
+        self.create_request_builder(Method::DELETE, url)?
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
     }
 }
 
@@ -246,5 +289,31 @@ pub mod resp {
     pub struct ProxyHistory {
         pub time: String,
         pub delay: i64,
+    }
+
+    #[derive(Deserialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Connection {
+        pub id: String,
+        pub metadata: ConnectionMetadata,
+        pub chains: Vec<String>,
+        pub start: String,
+        pub rule: String,
+        pub rule_payload: String,
+    }
+
+    #[derive(Deserialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ConnectionMetadata {
+        pub network: String,
+        pub r#type: String,
+        pub host: String,
+        pub process: String,
+        #[serde(rename(deserialize = "sourceIP"))]
+        pub source_ip: String,
+        pub source_port: String,
+        #[serde(rename(deserialize = "destinationIP"))]
+        pub destination_ip: String,
+        pub destination_port: String,
     }
 }
