@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::{Error, Result, anyhow, bail};
 use bytes::Bytes;
 use futures::{Stream, StreamExt, stream};
-use reqwest::{Client, ClientBuilder, IntoUrl, Method, RequestBuilder, Response};
+use reqwest::{ClientBuilder, IntoUrl, Method, RequestBuilder, Response};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -148,6 +148,33 @@ impl Api {
 
     pub async fn flush_fake_ip_cache(&self) -> Result<()> {
         let url = format!("{}/cache/fakeip/flush", self.api);
+        self.create_request_builder(Method::POST, url)?
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
+
+    pub async fn restart(&self) -> Result<()> {
+        let url = format!("{}/restart", self.api);
+        self.create_request_builder(Method::POST, url)?
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
+
+    pub async fn upgrade_ui(&self) -> Result<()> {
+        let url = format!("{}/upgrade/ui", self.api);
+        self.create_request_builder(Method::POST, url)?
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
+
+    pub async fn upgrade_geo(&self) -> Result<()> {
+        let url = format!("{}/upgrade/geo", self.api);
         self.create_request_builder(Method::POST, url)?
             .send()
             .await?

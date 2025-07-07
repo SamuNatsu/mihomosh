@@ -9,8 +9,11 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use crate::{
-    args::{Args, config::ConfigArgs, connection::ConnectionArgs, inspect::InspectArgs},
-    commands::{config, connection, inspect},
+    args::{
+        Args, config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs,
+        inspect::InspectArgs,
+    },
+    commands::{config, connection, control, inspect},
 };
 
 #[tokio::main]
@@ -26,6 +29,12 @@ async fn main() -> Result<()> {
             InspectArgs::Traffic => inspect::traffic().await?,
             InspectArgs::Memory => inspect::memory().await?,
             InspectArgs::Version => inspect::version().await?,
+        },
+        Args::Control(args) => match args {
+            ControlArgs::FlushCache => control::flush_cache().await?,
+            ControlArgs::UpdateUi => control::update_ui().await?,
+            ControlArgs::UpdateGeo => control::update_geo().await?,
+            ControlArgs::Restart => control::restart().await?,
         },
         Args::Connection(args) => match args {
             ConnectionArgs::View => connection::view().await?,
