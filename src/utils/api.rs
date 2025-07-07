@@ -263,9 +263,9 @@ impl Api {
             .get("connections")
             .ok_or(anyhow!("invalid response body"))?
             .clone();
-        let ret = serde_json::from_value::<Vec<resp::Connection>>(ret)?;
+        let ret = serde_json::from_value::<Option<Vec<resp::Connection>>>(ret)?;
 
-        Ok(ret)
+        Ok(ret.unwrap_or_default())
     }
 
     pub async fn close_all_connections(&self) -> Result<()> {

@@ -15,6 +15,11 @@ pub async fn view() -> Result<()> {
             .map_or(0, |v| v.timestamp_millis())
     });
 
+    if conns.len() == 0 {
+        println_secondary!("No connection");
+        return Ok(());
+    }
+
     for conn in conns {
         let start = conn
             .start
