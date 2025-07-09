@@ -1,0 +1,19 @@
+## Mihomosh profile info (v2)
+
+# Profile name (REQUIRED)
+name: New profile
+
+# Profile type (REQUIRED; One of `remote` or `local`)
+type: local
+
+# Profile URL (Required when type is `remote`)
+#url: https://example.com
+
+# User agent for updating (Required when type is `remote`)
+#user-agent: mihomosh/v<CARGO_PKG_VERSION> (clash-verge)
+
+# Proxy for updating (Required when type is `remote`; One of `none`, `system` or `mihomo`)
+#proxy: none
+
+# Whether to allow the invalid certificates (Required when type is `remote`)
+#allow-invalid-certs: false

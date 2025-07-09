@@ -11,9 +11,9 @@ use clap::{CommandFactory, Parser};
 use crate::{
     args::{
         Args, config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs,
-        inspect::InspectArgs,
+        inspect::InspectArgs, profile::ProfileArgs,
     },
-    commands::{config, connection, control, inspect},
+    commands::{config, connection, control, inspect, profile},
 };
 
 #[tokio::main]
@@ -23,6 +23,17 @@ async fn main() -> Result<()> {
             ConfigArgs::View { viewer } => config::view(viewer)?,
             ConfigArgs::Edit { editor } => config::edit(editor)?,
             ConfigArgs::Reset => config::reset()?,
+        },
+        Args::Profile(args) => match args {
+            ProfileArgs::Update { uuid_or_name } => (),
+            ProfileArgs::Activate { uuid_or_name } => (),
+            ProfileArgs::Create { editor } => profile::create(editor)?,
+            ProfileArgs::Delete { uuid_or_name } => (),
+            ProfileArgs::List => profile::list()?,
+            ProfileArgs::View(args) => (),
+            ProfileArgs::Edit(args) => (),
+            ProfileArgs::ViewGlobalExtendConfig { viewer } => (),
+            ProfileArgs::EditGlobalExtendConfig { editor } => (),
         },
         Args::Inspect(args) => match args {
             InspectArgs::Log => inspect::log().await?,
