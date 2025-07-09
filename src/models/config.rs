@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils;
 
-const DEFAULT_CONFIG_CONTENTS: &'static str = include_str!("../includes/default_config.yaml");
+const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_config.yaml");
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -51,7 +51,7 @@ impl Config {
         INSTANCE.get_or_init(|| {
             let path = utils::get_data_dir().join("config.json");
             if !path.is_file() {
-                fs::write(&path, DEFAULT_CONFIG_CONTENTS).expect("fail to write config file");
+                fs::write(&path, DEFAULT_CONFIG_TEMPLATE).expect("fail to write config file");
             }
 
             path
@@ -75,7 +75,7 @@ impl Config {
 
     pub fn reset() -> Result<()> {
         let path = Self::get_path();
-        fs::write(&path, DEFAULT_CONFIG_CONTENTS)?;
+        fs::write(&path, DEFAULT_CONFIG_TEMPLATE)?;
 
         Ok(())
     }
