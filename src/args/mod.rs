@@ -2,6 +2,7 @@ pub mod config;
 pub mod connection;
 pub mod control;
 pub mod inspect;
+pub mod profile;
 pub mod proxy;
 pub mod proxy_set;
 pub mod rule_set;
@@ -11,7 +12,7 @@ use clap_complete::Shell;
 
 use crate::args::{
     config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs, inspect::InspectArgs,
-    proxy::ProxyArgs, proxy_set::ProxySetArgs, rule_set::RuleSetArgs,
+    profile::ProfileArgs, proxy::ProxyArgs, proxy_set::ProxySetArgs, rule_set::RuleSetArgs,
 };
 
 /// A Command Line Interface for Mihomo
@@ -23,7 +24,8 @@ pub enum Args {
     Config(ConfigArgs),
 
     /// Print/Create/Update/Delete profiles
-    Profile,
+    #[command(subcommand)]
+    Profile(ProfileArgs),
 
     /// Inspect Mihomo info
     #[command(subcommand)]
