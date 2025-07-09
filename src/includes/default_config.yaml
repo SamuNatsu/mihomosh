@@ -1,16 +1,16 @@
 ## Mihomosh configs (v2)
 
 # Mihomo config file path (REQUIRED)
-mihomo_path: /etc/mihomo/config.yaml
+mihomo-path: /etc/mihomo/config.yaml
 
 # Mihomo external controller URL (REQUIRED)
-mihomo_api: http://127.0.0.1:9090
+mihomo-api: http://127.0.0.1:9090
 
 # Mihomo external controller secret (Optional)
 #mihomo_secret: input-your-secret-here
 
 # Log level (REQUIRED; One of `silent`, `error`, `warning`, `info` or `debug`)
-log_level: info
+log-level: info
 
 # Proxy mode (REQUIRED; One of `rule`, `global` or `direct`)
 mode: rule
@@ -25,10 +25,10 @@ port: 7890
 #mixed_port: 7892
 
 # Allow LAN (REQUIRED)
-allow_lan: false
+allow-lan: false
 
 # Allow IPv6 (REQUIRED)
-allow_ipv6: false
+allow-ipv6: false
 
 # Unified delay (REQUIRED)
-unified_delay: true
+unified-delay: true

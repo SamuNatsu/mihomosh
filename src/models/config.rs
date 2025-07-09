@@ -12,6 +12,7 @@ use crate::utils;
 const DEFAULT_CONFIG_CONTENTS: &'static str = include_str!("../includes/default_config.yaml");
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Config {
     pub mihomo_path: String,
     pub mihomo_api: String,
