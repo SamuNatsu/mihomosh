@@ -61,35 +61,41 @@ jobs:
           args: "--locked --release"
           strip: false
 
-      - name: Setup UPX for Linux platform
-        run: sudo apt install -y upx
+      - name: Setup UPX for Linux
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
+        run: sudo apt install -y upx
 
-      - name: Setup UPX for Windows platform
-        run: choco install upx -y
+      - name: Setup UPX for Windows
         if: ${{ matrix.platform.runs-on == 'windows-latest' }}
+        run: choco install upx -y
 
       ### Waiting for support: https://github.com/upx/upx/issues/612
-      # - name: Setup UPX for MacOS platform
-      #   run: brew install upx
+      # - name: Setup UPX for MacOS
       #   if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
+      #   run: brew install upx
 
-      - name: Compress binary target for Linux platform
-        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
+      - name: Compress binary for Linux
         if: ${{ matrix.platform.runs-on == 'ubuntu-latest' && !matrix.platform.skip-upx }}
+        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
 
-      - name: Compress binary target for Windows platform
-        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh.exe
+      - name: Compress binary for Windows
         if: ${{ matrix.platform.runs-on == 'windows-latest' && !matrix.platform.skip-upx }}
+        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh.exe
 
       ### Waiting for support: https://github.com/upx/upx/issues/612
-      # - name: Compress binary target for MacOS platform
-      #   run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
+      # - name: Compress binary for MacOS
       #   if: ${{ matrix.platform.runs-on == 'macOS-latest' && !matrix.platform.skip-upx }}
+      #   run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
 
-      - name: Extract changes details
+      - name: Extract changes for non-MacOS
+        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' || matrix.platform.runs-on == 'windows-latest' }}
+        run: git log -1 --pretty=format:%b | sed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
+
+      - name: Extract changes for MacOS
+        if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
         run: |
-          git log -1 --pretty=format:%b | sed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
+          brew install gnu-sed
+          git log -1 --pretty=format:%b | gsed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
