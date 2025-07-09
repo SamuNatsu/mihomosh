@@ -1,34 +1,14 @@
 pub mod api;
 pub mod file;
 pub mod macros;
+pub mod path;
 
-use std::{
-    fs,
-    io::{self, Write},
-    path::PathBuf,
-    sync::OnceLock,
-};
+use std::io::{self, Write};
 
-use anyhow::{Context, Result};
-use directories::ProjectDirs;
+use anyhow::Result;
+use rand::{TryRngCore, rngs::OsRng};
 
 use crate::str_primary;
-
-pub fn get_data_dir() -> &'static PathBuf {
-    static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
-    INSTANCE.get_or_init(|| {
-        let dir = ProjectDirs::from("io.github", "SNRainiar", "mihomosh")
-            .expect("fail to get data directory");
-        let dir = dir.data_local_dir();
-        if !dir.is_dir() {
-            fs::create_dir_all(dir)
-                .with_context(|| format!("path: {}", dir.display()))
-                .expect("fail to create data directory");
-        }
-
-        dir.to_owned()
-    })
-}
 
 pub fn prompt<S: AsRef<str>>(prompt: S) -> Result<String> {
     print!("{}", str_primary!("{}", prompt.as_ref()));
@@ -38,4 +18,11 @@ pub fn prompt<S: AsRef<str>>(prompt: S) -> Result<String> {
     io::stdin().read_line(&mut input)?;
 
     Ok(input.trim().to_owned())
+}
+
+pub fn gen_uuid() -> Result<String> {
+    let mut rng = OsRng;
+    let mut buf = vec![0u8; 4];
+    rng.try_fill_bytes(&mut buf)?;
+    Ok(hex::encode(buf))
 }

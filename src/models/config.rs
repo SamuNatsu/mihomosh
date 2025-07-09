@@ -7,7 +7,7 @@ use std::{
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::utils;
+use crate::utils::path;
 
 const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_config.yaml");
 
@@ -49,7 +49,7 @@ impl Config {
     pub fn get_path() -> &'static PathBuf {
         static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            let path = utils::get_data_dir().join("config.json");
+            let path = path::get_data_dir().join("config.json");
             if !path.is_file() {
                 fs::write(&path, DEFAULT_CONFIG_TEMPLATE).expect("fail to write config file");
             }
