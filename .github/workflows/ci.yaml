@@ -89,7 +89,7 @@ jobs:
 
       - name: Extract changes details
         run: |
-          git log -1 --pretty=%b | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > Changes.md
+          git log -1 --pretty=format:%b | sed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
