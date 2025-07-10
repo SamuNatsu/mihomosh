@@ -5,7 +5,7 @@ use std::{
     process::Command,
 };
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use tempfile::NamedTempFile;
 
 pub fn edit_temp_file<S1, S2, S3>(suffix: S1, editor: S2, default_contents: S3) -> Result<String>
@@ -15,19 +15,43 @@ where
     S3: AsRef<str>,
 {
     // Create named temporary file
-    let mut temp_file = NamedTempFile::with_suffix(suffix.as_ref())?;
-    temp_file.write_all(default_contents.as_ref().as_bytes())?;
-    temp_file.flush()?;
+    let mut temp_file = NamedTempFile::with_suffix(suffix.as_ref()).with_context(|| {
+        format!(
+            "Fail to create named temporary file with suffix `{}`",
+            suffix.as_ref()
+        )
+    })?;
+    temp_file
+        .write_all(default_contents.as_ref().as_bytes())
+        .with_context(|| format!("Fail to write file `{}`", temp_file.path().display()))?;
+    temp_file
+        .flush()
+        .with_context(|| format!("Fail to flush file `{}`", temp_file.path().display()))?;
 
-    // Execute editor for editing
+    // Execute editor
     let path = temp_file.path();
-    let status = Command::new(editor.as_ref()).arg(path).status()?;
+    let status = Command::new(editor.as_ref())
+        .arg(path)
+        .status()
+        .with_context(|| {
+            format!(
+                "Fail to execute program `{}` with argument `{}`",
+                editor.as_ref(),
+                path.display()
+            )
+        })?;
     if !status.success() {
-        bail!("editor `{}` did not exit successfully", editor.as_ref());
+        bail!(
+            "Editor `{}` exited with status `{}`",
+            editor.as_ref(),
+            status
+        );
     }
 
     // Return file contents
-    Ok(fs::read_to_string(path)?)
+    let contents = fs::read_to_string(path)
+        .with_context(|| format!("Fail to read file `{}`", path.display()))?;
+    Ok(contents)
 }
 
 pub fn view_file<S, P>(viewer: S, path: P) -> Result<()>
@@ -36,25 +60,52 @@ where
     P: AsRef<Path>,
 {
     // Create temporary file
-    let file_name = path
-        .as_ref()
-        .file_name()
-        .ok_or(anyhow!("not a path of file"))?;
+    let file_name = path.as_ref().file_name().ok_or(anyhow!(
+        "Path `{}` is not a file path",
+        path.as_ref().display()
+    ))?;
+
     let mut suffix = String::from(".");
     suffix.push_str(&file_name.to_string_lossy());
-    let mut temp_file = NamedTempFile::with_suffix(&suffix)?;
+
+    let mut temp_file = NamedTempFile::with_suffix(&suffix).with_context(|| {
+        format!(
+            "Fail to create named temporary file with suffix `{}`",
+            suffix
+        )
+    })?;
 
     // Copy orginal file
     {
-        let mut file = File::open(path)?;
-        io::copy(&mut file, &mut temp_file)?;
+        let mut file = File::open(&path)
+            .with_context(|| format!("Fail to open file `{}`", path.as_ref().display()))?;
+        io::copy(&mut file, &mut temp_file).with_context(|| {
+            format!(
+                "Fail to copy file from `{}` to `{}`",
+                path.as_ref().display(),
+                temp_file.path().display()
+            )
+        })?;
     }
 
     // Execute viewer
     let path = temp_file.path();
-    let status = Command::new(viewer.as_ref()).arg(path).status()?;
+    let status = Command::new(viewer.as_ref())
+        .arg(path)
+        .status()
+        .with_context(|| {
+            format!(
+                "Fail to execute program `{}` with argument `{}`",
+                viewer.as_ref(),
+                path.display()
+            )
+        })?;
     if !status.success() {
-        bail!("viewer `{}` did not exit successfully", viewer.as_ref());
+        bail!(
+            "Viewer `{}` exited with status `{}`",
+            viewer.as_ref(),
+            status
+        );
     }
 
     // Success
