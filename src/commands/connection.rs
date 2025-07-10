@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::{DateTime, Local, Utc};
 use tokio::task::JoinSet;
 use wildcard::Wildcard;
@@ -8,19 +8,27 @@ use crate::{
 };
 
 pub async fn view() -> Result<()> {
-    let mut conns = Config::get_instance().get_api().get_connections().await?;
+    // Get & sort connections
+    let mut conns = Config::get_instance()
+        .get_api()
+        .get_connections()
+        .await
+        .context("Fail to get connections")?;
     conns.sort_by_key(|v| {
         v.start
             .parse::<DateTime<Utc>>()
             .map_or(0, |v| v.timestamp_millis())
     });
 
+    // If no connection
     if conns.len() == 0 {
         println_secondary!("No connection");
         return Ok(());
     }
 
+    // Print connection list
     for conn in conns {
+        // Start time & matched rule
         let start = conn
             .start
             .parse::<DateTime<Local>>()?
@@ -41,6 +49,7 @@ pub async fn view() -> Result<()> {
             .yellow()
         );
 
+        // Type, source & destination
         println!(
             "Type: {}\t SRC: {}\tDST: {}",
             style_fmt!("{}({})", conn.metadata.r#type, conn.metadata.network).cyan(),
@@ -53,12 +62,14 @@ pub async fn view() -> Result<()> {
             .magenta()
         );
 
+        // Host & process
         println!(
             "Host: {}\tProcess: {}",
             console::style(conn.metadata.host).blue(),
             console::style(conn.metadata.process).blue()
         );
 
+        // Chains
         let chains = conn
             .chains
             .iter()
@@ -68,6 +79,7 @@ pub async fn view() -> Result<()> {
         println!("Chains: {}\n", chains);
     }
 
+    // Success
     Ok(())
 }
 
@@ -92,14 +104,19 @@ pub async fn close(
         Config::get_instance()
             .get_api()
             .close_all_connections()
-            .await?;
+            .await
+            .context("Fail to close all connections")?;
+
         println_success!("All connection closed");
         return Ok(());
     }
 
-    // Filtering
+    // Filter connections
     let api = Config::get_instance().get_api();
-    let conns = api.get_connections().await?;
+    let conns = api
+        .get_connections()
+        .await
+        .context("Fail to get connections")?;
     let mut filtered = Vec::new();
 
     for conn in conns {
@@ -194,12 +211,13 @@ pub async fn close(
 
     println_secondary!("{} connection(s) found", filtered.len());
 
-    // Close
+    // If no connection found
     if filtered.len() == 0 {
         println_success!("No connection to be closed");
         return Ok(());
     }
 
+    // Async close connections
     let mut tasks = JoinSet::new();
     for conn in filtered {
         tasks.spawn(async move {
@@ -209,7 +227,7 @@ pub async fn close(
                 .await;
             match ret {
                 Ok(_) => println_success!(
-                    "Closed: process={} dst={}:{}",
+                    "Closed: process=`{}` dst=`{}:{}`",
                     conn.metadata.process,
                     if conn.metadata.host.is_empty() {
                         conn.metadata.destination_ip
@@ -219,7 +237,7 @@ pub async fn close(
                     conn.metadata.destination_port
                 ),
                 Err(err) => println_danger!(
-                    "Fail: process={} dst={}:{} err={}",
+                    "Fail: process=`{}` dst=`{}:{}` err=`{}`",
                     conn.metadata.process,
                     if conn.metadata.host.is_empty() {
                         conn.metadata.destination_ip

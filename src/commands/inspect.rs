@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use futures::StreamExt;
 
 use crate::{models::config::Config, println_primary, println_success};
@@ -8,17 +8,17 @@ pub async fn log() -> Result<()> {
 
     // Create stream
     let api = Config::get_instance().get_api();
-    let mut stream = api.get_logs().await?;
+    let mut stream = api.get_logs().await.context("Fail to get log stream")?;
 
     // Parse logs
-    while let Some(inuse) = stream.next().await {
-        let (t, p) = inuse?;
+    while let Some(log) = stream.next().await {
+        let (t, p) = log.context("Fail to extract log data")?;
         match t.as_str() {
             "info" => println!("{} {}", console::style("[INFO ]").green(), p),
             "warning" => println!("{} {}", console::style("[WARN ]").yellow(), p),
             "error" => println!("{} {}", console::style("[ERROR]").red(), p),
             "debug" => println!("{} {}", console::style("[DEBUG]").blue(), p),
-            _ => bail!("unexpected log type `{t}`"),
+            _ => bail!("Unexpected log type `{t}`"),
         }
     }
 
@@ -31,11 +31,14 @@ pub async fn traffic() -> Result<()> {
 
     // Create stream
     let api = Config::get_instance().get_api();
-    let mut stream = api.get_traffic().await?;
+    let mut stream = api
+        .get_traffic()
+        .await
+        .context("Fail to get traffic stream")?;
 
     // Parse logs
-    while let Some(inuse) = stream.next().await {
-        let (up, down) = inuse?;
+    while let Some(traffic) = stream.next().await {
+        let (up, down) = traffic.context("Fail to extract traffic data")?;
         println!(
             "Up: {}\t\tDown: {}",
             get_colored_number(up, "/s"),
@@ -52,11 +55,14 @@ pub async fn memory() -> Result<()> {
 
     // Create stream
     let api = Config::get_instance().get_api();
-    let mut stream = api.get_memory().await?;
+    let mut stream = api
+        .get_memory()
+        .await
+        .context("Fail to get memory stream")?;
 
     // Parse logs
-    while let Some(inuse) = stream.next().await {
-        let inuse = inuse?;
+    while let Some(memory) = stream.next().await {
+        let inuse = memory.context("Fail to extract memory data")?;
         println!("Inuse: {}", get_colored_number(inuse, ""))
     }
 
@@ -65,7 +71,12 @@ pub async fn memory() -> Result<()> {
 }
 
 pub async fn version() -> Result<()> {
-    let version = Config::get_instance().get_api().get_version().await?;
+    let version = Config::get_instance()
+        .get_api()
+        .get_version()
+        .await
+        .context("Fail to get version")?;
+
     println_success!("Mihomo version: {version}");
     Ok(())
 }
