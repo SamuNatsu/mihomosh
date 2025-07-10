@@ -4,18 +4,19 @@ use std::{
     sync::OnceLock,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
+use url::Url;
 
-use crate::utils::path;
+use crate::utils::dir;
 
 const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_config.yaml");
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
-    pub mihomo_path: String,
-    pub mihomo_api: String,
+    pub mihomo_path: PathBuf,
+    pub mihomo_api: Url,
     pub mihomo_secret: Option<String>,
     pub log_level: ConfigLogLevel,
     pub mode: ConfigMode,
@@ -49,9 +50,11 @@ impl Config {
     pub fn get_path() -> &'static PathBuf {
         static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            let path = path::get_data_dir().join("config.json");
+            let path = dir::get_data_dir().join("config.json");
             if !path.is_file() {
-                fs::write(&path, DEFAULT_CONFIG_TEMPLATE).expect("fail to write config file");
+                fs::write(&path, DEFAULT_CONFIG_TEMPLATE)
+                    .with_context(|| format!("Fail to write file `{}`", path.display()))
+                    .unwrap();
             }
 
             path
@@ -62,20 +65,43 @@ impl Config {
         static INSTANCE: OnceLock<Config> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             let path = Self::get_path();
-            let file = File::open(&path).expect("fail to open config file");
+            let file = File::open(&path)
+                .with_context(|| format!("Fail to open file `{}`", path.display()))
+                .unwrap();
 
-            serde_yml::from_reader(&file).expect("fail to parse config file")
+            serde_yml::from_reader(&file)
+                .with_context(|| format!("Fail to parse config file `{}`", path.display()))
+                .unwrap()
         })
     }
 
-    pub fn verify<S: AsRef<str>>(contents: S) -> Result<()> {
-        serde_yml::from_str::<Self>(contents.as_ref())?;
+    pub fn update<S: AsRef<str>>(contents: S) -> Result<()> {
+        // Verify
+        let value =
+            serde_yml::from_str::<Self>(contents.as_ref()).context("Fail to parse contents")?;
+        if value.port.map_or(false, |p| p == 0) {
+            bail!("`port` cannot be 0");
+        }
+        if value.socks_port.map_or(false, |p| p == 0) {
+            bail!("`socks-port` cannot be 0");
+        }
+        if value.mixed_port.map_or(false, |p| p == 0) {
+            bail!("`mixed-port` cannot be 0");
+        }
+
+        // Write file
+        let path = Self::get_path();
+        fs::write(path, contents.as_ref())
+            .with_context(|| format!("Fail to write file `{}`", path.display()))?;
+
+        // Success
         Ok(())
     }
 
     pub fn reset() -> Result<()> {
         let path = Self::get_path();
-        fs::write(&path, DEFAULT_CONFIG_TEMPLATE)?;
+        fs::write(&path, DEFAULT_CONFIG_TEMPLATE)
+            .with_context(|| format!("Fail to write file `{}`", path.display()))?;
 
         Ok(())
     }

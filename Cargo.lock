@@ -844,6 +844,8 @@ dependencies = [
  "serde_yml",
  "tempfile",
  "tokio",
+ "unicode-width",
+ "url",
  "urlencoding",
  "wildcard",
 ]
@@ -1542,6 +1544,7 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]
