@@ -5,17 +5,18 @@ use std::{
     sync::{Mutex, OnceLock},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::{TimeZone, Utc};
 use console::StyledObject;
 use serde::{Deserialize, Serialize};
+use unicode_width::UnicodeWidthStr;
 
-use crate::{style_fmt, utils::path};
+use crate::{style_fmt, utils::dir};
 
 #[derive(Deserialize, Serialize)]
 pub struct Meta {
     pub name: String,
-    pub remote: bool,
+    pub is_remote: bool,
     pub updated_at: Option<i64>,
     pub expired_at: Option<i64>,
     pub used_bytes: Option<usize>,
@@ -23,12 +24,14 @@ pub struct Meta {
 }
 
 impl Meta {
-    fn get_path() -> &'static PathBuf {
+    pub fn get_path() -> &'static PathBuf {
         static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            let path = path::get_data_dir().join("meta.json");
+            let path = dir::get_data_dir().join("meta.json");
             if !path.is_file() {
-                fs::write(&path, "{}").expect("fail to write meta file");
+                fs::write(&path, "{}")
+                    .with_context(|| format!("Fail to write file `{}`", path.display()))
+                    .unwrap();
             }
 
             path
@@ -39,24 +42,39 @@ impl Meta {
         static INSTANCE: OnceLock<Mutex<HashMap<String, Meta>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             let path = Self::get_path();
-            let file = File::open(path).expect("fail to open meta file");
+            let file = File::open(path)
+                .with_context(|| format!("Fail to open file `{}`", path.display()))
+                .unwrap();
 
-            serde_json::from_reader(&file).expect("fail to parse meta")
+            serde_json::from_reader(&file)
+                .with_context(|| format!("Fail to parse meta file `{}`", path.display()))
+                .unwrap()
         })
     }
 
     pub fn flush() -> Result<()> {
         let meta = Self::get_instance().lock().unwrap();
         let path = Self::get_path();
-        let file = File::create(path)?;
-        serde_json::to_writer(&file, &*meta)?;
+        let file = File::create(path)
+            .with_context(|| format!("Fail to create file `{}`", path.display()))?;
+        serde_json::to_writer(&file, &*meta)
+            .with_context(|| format!("Fail to serialize and write file `{}`", path.display()))?;
 
         Ok(())
     }
 
     pub fn get_styled_name(&self) -> String {
-        if self.name.len() > 16 {
-            let mut tmp = self.name[..13].to_string();
+        if UnicodeWidthStr::width_cjk(self.name.as_str()) > 16 {
+            let mut ed = 0;
+            loop {
+                if UnicodeWidthStr::width_cjk(&self.name[..ed]) > 13 {
+                    ed -= 1;
+                    break;
+                }
+                ed += 1;
+            }
+
+            let mut tmp = self.name[..ed].to_string();
             tmp.push_str("...");
             tmp
         } else {
@@ -65,7 +83,7 @@ impl Meta {
     }
 
     pub fn get_styled_remote(&self) -> StyledObject<&'static str> {
-        if self.remote {
+        if self.is_remote {
             console::style("Y").green()
         } else {
             console::style("N").red()

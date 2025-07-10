@@ -3,9 +3,10 @@ use std::path::PathBuf;
 use anyhow::{Result, bail};
 use serde::Deserialize;
 
-use crate::utils::path;
+use crate::utils::dir;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Profile {
     pub name: String,
     pub r#type: ProfileType,
@@ -32,19 +33,19 @@ pub enum ProfileProxy {
 
 impl Profile {
     pub fn get_path<S: AsRef<str>>(uuid: S) -> PathBuf {
-        path::get_profile_dir().join(format!("{}.yaml", uuid.as_ref()))
+        dir::get_profile_dir().join(format!("{}.yaml", uuid.as_ref()))
     }
 
     pub fn get_data_path<S: AsRef<str>>(uuid: S) -> PathBuf {
-        path::get_profile_dir().join(format!("{}.data.yaml", uuid.as_ref()))
+        dir::get_profile_dir().join(format!("{}.data.yaml", uuid.as_ref()))
     }
 
     pub fn get_ext_conf_path<S: AsRef<str>>(uuid: S) -> PathBuf {
-        path::get_profile_dir().join(format!("{}.ext.yaml", uuid.as_ref()))
+        dir::get_profile_dir().join(format!("{}.ext.yaml", uuid.as_ref()))
     }
 
     pub fn get_ext_script_path<S: AsRef<str>>(uuid: S) -> PathBuf {
-        path::get_profile_dir().join(format!("{}.js", uuid.as_ref()))
+        dir::get_profile_dir().join(format!("{}.js", uuid.as_ref()))
     }
 
     pub fn verify(&self) -> Result<()> {

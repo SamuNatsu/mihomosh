@@ -1,6 +1,7 @@
 use std::fs;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use rand::{TryRngCore, rngs::OsRng};
 
 use crate::{
     models::{
@@ -8,7 +9,7 @@ use crate::{
         profile::{Profile, ProfileType},
     },
     println_secondary, println_success,
-    utils::{self, file},
+    utils::{file, prompt},
 };
 
 const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_profile.yaml");
@@ -19,30 +20,28 @@ pub fn create(editor: String) -> Result<()> {
     // Edit temporary file
     let contents = file::edit_temp_file(
         ".yaml",
-        editor,
+        &editor,
         DEFAULT_CONFIG_TEMPLATE.replace("<CARGO_PKG_VERSION>", env!("CARGO_PKG_VERSION")),
-    )?;
-    let profile = serde_yml::from_str::<Profile>(&contents)?;
-    profile.verify()?;
+    )
+    .with_context(|| format!("Fail to edit temporary YAML file with editor `{}`", editor))?;
+    let profile = serde_yml::from_str::<Profile>(&contents).context("Fail to parse profile")?;
+    profile.verify().context("Fail to verify profile")?;
 
     // Confirm to create
-    let prompt = format!(
-        "Are you sure to create the new profile `{}`? (y/N) ",
-        profile.name
-    );
-    let input = utils::prompt(&prompt)?;
-    if input.to_lowercase() != "y" {
+    let msg = format!("Are you sure to create the new profile `{}`?", profile.name);
+    let input = prompt::confirm(&msg).context("Fail to show confirm prompt")?;
+    if !input {
         println_secondary!("Changes discarded");
         return Ok(());
     }
 
     // Update metadata
-    let uuid = utils::gen_uuid()?;
+    let uuid = gen_uuid().context("Fail to generate UUID")?;
     meta.insert(
         uuid.clone(),
         Meta {
             name: profile.name.clone().trim().to_string(),
-            remote: if let ProfileType::Local = profile.r#type {
+            is_remote: if let ProfileType::Local = profile.r#type {
                 false
             } else {
                 true
@@ -53,11 +52,14 @@ pub fn create(editor: String) -> Result<()> {
             total_bytes: None,
         },
     );
-    Meta::flush()?;
 
-    // Update config file
+    drop(meta);
+    Meta::flush().context("Fail to flush meta file")?;
+
+    // Write profile
     let path = Profile::get_path(&uuid);
-    fs::write(&path, contents)?;
+    fs::write(&path, contents)
+        .with_context(|| format!("Fail to write file `{}`", path.display()))?;
 
     // Success
     println_success!("New profile `{}` with UUID `{}` added", profile.name, uuid);
@@ -76,8 +78,8 @@ pub fn list() -> Result<()> {
     // Get profile list
     let mut kv = meta.iter().collect::<Vec<_>>();
     kv.sort_by(|a, b| {
-        if a.1.remote != b.1.remote {
-            a.1.remote.cmp(&b.1.remote)
+        if a.1.is_remote != b.1.is_remote {
+            a.1.is_remote.cmp(&b.1.is_remote)
         } else if a.1.name != b.1.name {
             a.1.name.cmp(&b.1.name)
         } else {
@@ -109,4 +111,13 @@ pub fn list() -> Result<()> {
 
     // Success
     Ok(())
+}
+
+fn gen_uuid() -> Result<String> {
+    let mut rng = OsRng;
+    let mut buf = vec![0u8; 4];
+
+    rng.try_fill_bytes(&mut buf)
+        .context("Fail to fill random bytes")?;
+    Ok(hex::encode(buf))
 }
