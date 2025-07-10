@@ -7,7 +7,7 @@ mihomo-path: /etc/mihomo/config.yaml
 mihomo-api: http://127.0.0.1:9090
 
 # Mihomo external controller secret (Optional)
-#mihomo_secret: input-your-secret-here
+#mihomo-secret: input-your-secret-here
 
 # Log level (REQUIRED; One of `silent`, `error`, `warning`, `info` or `debug`)
 log-level: info
@@ -19,10 +19,10 @@ mode: rule
 port: 7890
 
 # Socks port (Optional)
-#socks_port: 7891
+#socks-port: 7891
 
 # Mixed port (Optional)
-#mixed_port: 7892
+#mixed-port: 7892
 
 # Allow LAN (REQUIRED)
 allow-lan: false
