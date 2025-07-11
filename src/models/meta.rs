@@ -65,16 +65,18 @@ impl Meta {
 
     pub fn get_styled_name(&self) -> String {
         if UnicodeWidthStr::width_cjk(self.name.as_str()) > 16 {
+            let chars = self.name.chars().collect::<Vec<_>>();
             let mut ed = 0;
             loop {
-                if UnicodeWidthStr::width_cjk(&self.name[..ed]) > 13 {
+                let tmp = chars[..ed].iter().collect::<String>();
+                if UnicodeWidthStr::width_cjk(tmp.as_str()) > 13 {
                     ed -= 1;
                     break;
                 }
                 ed += 1;
             }
 
-            let mut tmp = self.name[..ed].to_string();
+            let mut tmp = chars[..ed].iter().collect::<String>();
             tmp.push_str("...");
             tmp
         } else {
