@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use anyhow::{Context, Error, Result, anyhow, bail};
+use anyhow::{Context, Error, Result, anyhow};
 use bytes::Bytes;
 use futures::{Stream, StreamExt, stream};
 use reqwest::{ClientBuilder, Method, RequestBuilder, Response};
