@@ -1,6 +1,6 @@
 use std::fs;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use rand::{TryRngCore, rngs::OsRng};
 
 use crate::{
@@ -68,31 +68,10 @@ pub fn create(editor: String) -> Result<()> {
 }
 
 pub fn delete(uuid_or_name: String) -> Result<()> {
-    let mut meta_map = Meta::get_instance().lock().unwrap();
-
     // Get metadata
-    let uuid = {
-        if meta_map.contains_key(&uuid_or_name) {
-            &uuid_or_name
-        } else {
-            let entries = meta_map
-                .iter()
-                .filter(|(_, v)| v.name == uuid_or_name)
-                .collect::<Vec<_>>();
-
-            if entries.len() == 0 {
-                bail!("Profile not found with UUID or name `{uuid_or_name}`");
-            }
-            if entries.len() > 1 {
-                bail!(
-                    "Multiple profiles found with name `{uuid_or_name}`, please use UUID instead"
-                );
-            }
-
-            entries[0].0
-        }
-    }
-    .clone();
+    let uuid = Meta::find_uuid_or_name(&uuid_or_name)
+        .with_context(|| format!("Fail to find UUID or name `{}`", uuid_or_name))?;
+    let mut meta_map = Meta::get_instance().lock().unwrap();
     let meta = meta_map.get(&uuid).unwrap();
     let name = meta.name.clone();
 

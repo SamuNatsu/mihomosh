@@ -17,7 +17,7 @@ use crate::{
         inspect::InspectArgs,
         profile::{ProfileArgs, ProfileEditArgs, ProfileViewArgs},
     },
-    commands::{config, connection, control, inspect, profile, profile_global},
+    commands::{config, connection, control, inspect, profile, profile_global, profile_view},
 };
 
 #[tokio::main]
@@ -38,19 +38,19 @@ async fn main() -> Result<()> {
                 ProfileViewArgs::Info {
                     uuid_or_name,
                     viewer,
-                } => (),
+                } => profile_view::view_info(uuid_or_name, viewer)?,
                 ProfileViewArgs::File {
                     uuid_or_name,
                     viewer,
-                } => (),
+                } => profile_view::view_file(uuid_or_name, viewer)?,
                 ProfileViewArgs::ExtendConfig {
                     uuid_or_name,
                     viewer,
-                } => (),
+                } => profile_view::view_ext_conf(uuid_or_name, viewer)?,
                 ProfileViewArgs::ExtendScript {
                     uuid_or_name,
                     viewer,
-                } => (),
+                } => profile_view::view_ext_script(uuid_or_name, viewer)?,
             },
             ProfileArgs::Edit(args) => match args {
                 ProfileEditArgs::Info {

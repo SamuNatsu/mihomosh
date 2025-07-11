@@ -5,7 +5,7 @@ use std::{
     sync::{Mutex, OnceLock},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use chrono::{TimeZone, Utc};
 use console::StyledObject;
 use serde::{Deserialize, Serialize};
@@ -50,6 +50,37 @@ impl Meta {
                 .with_context(|| format!("Fail to parse meta file `{}`", path.display()))
                 .unwrap()
         })
+    }
+
+    pub fn find_uuid_or_name<S: AsRef<str>>(uuid_or_name: S) -> Result<String> {
+        let meta_map = Self::get_instance().lock().unwrap();
+
+        let uuid = if meta_map.contains_key(uuid_or_name.as_ref()) {
+            uuid_or_name.as_ref()
+        } else {
+            let entries = meta_map
+                .iter()
+                .filter(|(_, v)| v.name == uuid_or_name.as_ref())
+                .collect::<Vec<_>>();
+
+            if entries.len() == 0 {
+                bail!(
+                    "Profile not found with UUID or name `{}`",
+                    uuid_or_name.as_ref()
+                );
+            }
+            if entries.len() > 1 {
+                bail!(
+                    "Multiple profiles found with name `{}`, please use UUID instead",
+                    uuid_or_name.as_ref()
+                );
+            }
+
+            entries[0].0
+        }
+        .to_owned();
+
+        Ok(uuid)
     }
 
     pub fn flush() -> Result<()> {

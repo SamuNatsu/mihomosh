@@ -4,3 +4,4 @@ pub mod control;
 pub mod inspect;
 pub mod profile;
 pub mod profile_global;
+pub mod profile_view;
