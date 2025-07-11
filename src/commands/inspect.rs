@@ -14,10 +14,10 @@ pub async fn log() -> Result<()> {
     while let Some(log) = stream.next().await {
         let (t, p) = log.context("Fail to extract log data")?;
         match t.as_str() {
-            "info" => println!("{} {}", console::style("[INFO ]").green(), p),
-            "warning" => println!("{} {}", console::style("[WARN ]").yellow(), p),
-            "error" => println!("{} {}", console::style("[ERROR]").red(), p),
-            "debug" => println!("{} {}", console::style("[DEBUG]").blue(), p),
+            "info" => println!("{} {p}", console::style("[INFO ]").green()),
+            "warning" => println!("{} {p}", console::style("[WARN ]").yellow()),
+            "error" => println!("{} {p}", console::style("[ERROR]").red()),
+            "debug" => println!("{} {p}", console::style("[DEBUG]").blue()),
             _ => bail!("Unexpected log type `{t}`"),
         }
     }
@@ -83,7 +83,7 @@ pub async fn version() -> Result<()> {
 
 fn get_colored_number<S: AsRef<str>>(num: u64, suffix: S) -> String {
     let text = if num < 1024 {
-        format!("{} B{}", num, suffix.as_ref())
+        format!("{num} B{}", suffix.as_ref())
     } else if num < 1048576 {
         format!("{:.1} KB{}", num as f64 / 1024.0, suffix.as_ref())
     } else {

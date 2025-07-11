@@ -76,7 +76,7 @@ pub async fn view() -> Result<()> {
             .map(|s| console::style(s).on_white().black().to_string())
             .collect::<Vec<_>>()
             .join(" -> ");
-        println!("Chains: {}\n", chains);
+        println!("Chains: {chains}\n");
     }
 
     // Success

@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use rand::{TryRngCore, rngs::OsRng};
 
 use crate::{
+    includes::DEFAULT_PROFILE_TEMPLATE,
     models::{
         meta::Meta,
         profile::{Profile, ProfileType},
@@ -12,8 +13,6 @@ use crate::{
     utils::{file, prompt},
 };
 
-const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_profile.yaml");
-
 pub fn create(editor: String) -> Result<()> {
     let mut meta_map = Meta::get_instance().lock().unwrap();
 
@@ -21,9 +20,9 @@ pub fn create(editor: String) -> Result<()> {
     let contents = file::edit_temp_file(
         ".yaml",
         &editor,
-        DEFAULT_CONFIG_TEMPLATE.replace("<CARGO_PKG_VERSION>", env!("CARGO_PKG_VERSION")),
+        DEFAULT_PROFILE_TEMPLATE.replace("<CARGO_PKG_VERSION>", env!("CARGO_PKG_VERSION")),
     )
-    .with_context(|| format!("Fail to edit temporary YAML file with editor `{}`", editor))?;
+    .with_context(|| format!("Fail to edit temporary YAML file with editor `{editor}`"))?;
 
     let profile = serde_yml::from_str::<Profile>(&contents).context("Fail to parse profile")?;
     profile.verify().context("Fail to verify profile")?;
@@ -70,7 +69,7 @@ pub fn create(editor: String) -> Result<()> {
 pub fn delete(uuid_or_name: String) -> Result<()> {
     // Get metadata
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
-        .with_context(|| format!("Fail to find UUID or name `{}`", uuid_or_name))?;
+        .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let mut meta_map = Meta::get_instance().lock().unwrap();
     let meta = meta_map.get(&uuid).unwrap();
     let name = meta.name.clone();

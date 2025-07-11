@@ -1,6 +1,6 @@
 use std::fs;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
 use crate::{
     models::config::Config,
@@ -10,23 +10,26 @@ use crate::{
 
 pub fn view(viewer: String) -> Result<()> {
     let path = Config::get_path();
-    file::view_file(&viewer, path).with_context(|| {
+    let exists = file::view_file(path, &viewer).with_context(|| {
         format!(
-            "Fail to view file `{}` with viewer `{}`",
-            path.display(),
-            viewer
+            "Fail to view file `{}` with viewer `{viewer}`",
+            path.display()
         )
     })?;
+    if !exists {
+        bail!("File `{}` not exists", path.display());
+    }
+
     Ok(())
 }
 
 pub fn edit(editor: String) -> Result<()> {
-    // Edit & verify
+    // Edit configs
     let path = Config::get_path();
     let contents = fs::read_to_string(path)
         .with_context(|| format!("Fail to read file `{}`", path.display()))?;
     let contents = file::edit_temp_file(".yaml", &editor, &contents)
-        .with_context(|| format!("Fail to edit temporary YAML file with editor `{}`", editor))?;
+        .with_context(|| format!("Fail to edit temporary file with editor `{editor}`"))?;
 
     // Confirm to save
     let input = prompt::confirm("Are you sure to save the changes?")

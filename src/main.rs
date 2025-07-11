@@ -1,5 +1,6 @@
 mod arguments;
 mod commands;
+mod includes;
 mod models;
 mod utils;
 
@@ -17,7 +18,9 @@ use crate::{
         inspect::InspectArgs,
         profile::{ProfileArgs, ProfileEditArgs, ProfileViewArgs},
     },
-    commands::{config, connection, control, inspect, profile, profile_global, profile_view},
+    commands::{
+        config, connection, control, inspect, profile, profile_edit, profile_global, profile_view,
+    },
 };
 
 #[tokio::main]
@@ -56,19 +59,19 @@ async fn main() -> Result<()> {
                 ProfileEditArgs::Info {
                     uuid_or_name,
                     editor,
-                } => (),
+                } => profile_edit::edit_info(uuid_or_name, editor)?,
                 ProfileEditArgs::File {
                     uuid_or_name,
                     editor,
-                } => (),
+                } => profile_edit::edit_file(uuid_or_name, editor)?,
                 ProfileEditArgs::ExtendConfig {
                     uuid_or_name,
                     editor,
-                } => (),
+                } => profile_edit::edit_ext_conf(uuid_or_name, editor)?,
                 ProfileEditArgs::ExtendScript {
                     uuid_or_name,
                     editor,
-                } => (),
+                } => profile_edit::edit_ext_script(uuid_or_name, editor)?,
             },
             ProfileArgs::ViewGlobalExtendConfig { viewer } => {
                 profile_global::view_ext_conf(viewer)?

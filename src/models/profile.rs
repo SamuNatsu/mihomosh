@@ -45,7 +45,7 @@ impl Profile {
     }
 
     pub fn get_ext_script_path<S: AsRef<str>>(uuid: S) -> PathBuf {
-        dir::get_profile_dir().join(format!("{}.js", uuid.as_ref()))
+        dir::get_profile_dir().join(format!("{}.ext.js", uuid.as_ref()))
     }
 
     pub fn verify(&self) -> Result<()> {

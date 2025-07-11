@@ -312,9 +312,9 @@ impl Api {
         self.create_request_builder(Method::PUT, &path)?
             .send()
             .await
-            .with_context(|| format!("Fail to send `PUT /{}`", path))?
+            .with_context(|| format!("Fail to send `PUT /{path}`"))?
             .error_for_status()
-            .with_context(|| format!("Fail to send `PUT /{}`", path))?;
+            .with_context(|| format!("Fail to send `PUT /{path}`"))?;
         Ok(())
     }
 
@@ -358,9 +358,9 @@ impl Api {
         self.create_request_builder(Method::DELETE, &path)?
             .send()
             .await
-            .with_context(|| format!("Fail to send `DELETE /{}`", path))?
+            .with_context(|| format!("Fail to send `DELETE /{path}`"))?
             .error_for_status()
-            .with_context(|| format!("Fail to send `DELETE /{}`", path))?;
+            .with_context(|| format!("Fail to send `DELETE /{path}`"))?;
         Ok(())
     }
 }

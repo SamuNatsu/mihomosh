@@ -8,9 +8,7 @@ use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::utils::dir;
-
-const DEFAULT_CONFIG_TEMPLATE: &'static str = include_str!("../includes/default_config.yaml");
+use crate::{includes::DEFAULT_CONFIG_TEMPLATE, utils::dir};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]

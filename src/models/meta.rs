@@ -13,7 +13,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{style_fmt, utils::dir};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Meta {
     pub name: String,
     pub is_remote: bool,
