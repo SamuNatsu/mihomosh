@@ -10,7 +10,7 @@ pub mod rule_set;
 use clap::Parser;
 use clap_complete::Shell;
 
-use crate::args::{
+use crate::arguments::{
     config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs, inspect::InspectArgs,
     profile::ProfileArgs, proxy::ProxyArgs, proxy_set::ProxySetArgs, rule_set::RuleSetArgs,
 };

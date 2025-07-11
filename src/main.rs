@@ -1,4 +1,4 @@
-mod args;
+mod arguments;
 mod commands;
 mod models;
 mod utils;
@@ -9,7 +9,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use crate::{
-    args::{
+    arguments::{
         Args, config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs,
         inspect::InspectArgs, profile::ProfileArgs,
     },
