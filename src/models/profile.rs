@@ -13,7 +13,7 @@ pub struct Profile {
     pub url: Option<String>,
     pub user_agent: Option<String>,
     pub proxy: Option<ProfileProxy>,
-    pub allow_invalid_caerts: Option<bool>,
+    pub allow_invalid_certs: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -66,7 +66,7 @@ impl Profile {
                 bail!("`proxy` is needed");
             }
 
-            if self.allow_invalid_caerts.is_none() {
+            if self.allow_invalid_certs.is_none() {
                 bail!("`allow-invalid-certs` is needed")
             }
         }
