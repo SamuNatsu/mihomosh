@@ -19,15 +19,19 @@ use crate::arguments::{
 #[derive(Parser)]
 #[command(about, version, long_about = None)]
 pub enum Args {
-    /// Print/Update configs
+    /// Manage configs
     #[command(subcommand)]
     Config(ConfigArgs),
 
-    /// Print/Create/Update/Delete profiles
+    /// Manage profiles
     #[command(subcommand)]
     Profile(ProfileArgs),
 
-    /// Inspect Mihomo info
+    /// Manage connections
+    #[command(subcommand)]
+    Connection(ConnectionArgs),
+
+    /// Inspect Mihomo runtime info
     #[command(subcommand)]
     Inspect(InspectArgs),
 
@@ -49,10 +53,6 @@ pub enum Args {
     /// Print/Update rule sets
     #[command(subcommand)]
     RuleSet(RuleSetArgs),
-
-    /// Print/Close connections
-    #[command(subcommand)]
-    Connection(ConnectionArgs),
 
     /// Generate shell completion
     ShellCompletion {

@@ -38,15 +38,33 @@ pub enum ProfileArgs {
     #[command(subcommand)]
     Edit(ProfileEditArgs),
 
-    /// View global extend config
+    /// View global extend configs
+    #[command(name = "vgxc")]
     ViewGlobalExtendConfig {
         /// Viewer to be used for viewing
         #[arg(short, long, default_value = "less")]
         viewer: String,
     },
 
-    /// Edit global extend config
+    /// View global extend script
+    #[command(name = "vgxs")]
+    ViewGlobalExtendScript {
+        /// Viewer to be used for viewing
+        #[arg(short, long, default_value = "less")]
+        viewer: String,
+    },
+
+    /// Edit global extend configs
+    #[command(name = "egxc")]
     EditGlobalExtendConfig {
+        /// Editor to be used for creating
+        #[arg(short, long, default_value = "nano")]
+        editor: String,
+    },
+
+    /// Edit global extend script
+    #[command(name = "egxs")]
+    EditGlobalExtendScript {
         /// Editor to be used for creating
         #[arg(short, long, default_value = "nano")]
         editor: String,
@@ -75,7 +93,7 @@ pub enum ProfileViewArgs {
         viewer: String,
     },
 
-    /// View a profile's extend config
+    /// View a profile's extend configs
     ExtendConfig {
         /// Profile UUID or name
         uuid_or_name: String,
@@ -118,7 +136,7 @@ pub enum ProfileEditArgs {
         editor: String,
     },
 
-    /// View a profile's extend config
+    /// View a profile's extend configs
     ExtendConfig {
         /// Profile UUID or name
         uuid_or_name: String,

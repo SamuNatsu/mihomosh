@@ -36,7 +36,7 @@ pub fn edit(editor: String) -> Result<()> {
         return Ok(());
     }
 
-    // Update conigs
+    // Update configs
     Config::update(&contents).context("Fail to update config file")?;
     println_success!("Mihomo configs saved");
     Ok(())

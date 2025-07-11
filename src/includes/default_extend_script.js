@@ -1,3 +1,7 @@
 /* Mihomosh extend script */
 
-// Write your JavaScript codes here
+function main(config) {
+  // Write your JavaScript codes here
+
+  return config;
+}
