@@ -17,7 +17,7 @@ use crate::{
         inspect::InspectArgs,
         profile::{ProfileArgs, ProfileEditArgs, ProfileViewArgs},
     },
-    commands::{config, connection, control, inspect, profile},
+    commands::{config, connection, control, inspect, profile, profile_global},
 };
 
 #[tokio::main]
@@ -70,13 +70,17 @@ async fn main() -> Result<()> {
                     editor,
                 } => (),
             },
-            ProfileArgs::ViewGlobalExtendConfig { viewer } => profile::view_glob_ext_conf(viewer)?,
-            ProfileArgs::ViewGlobalExtendScript { viewer } => {
-                profile::view_glob_ext_script(viewer)?
+            ProfileArgs::ViewGlobalExtendConfig { viewer } => {
+                profile_global::view_ext_conf(viewer)?
             }
-            ProfileArgs::EditGlobalExtendConfig { editor } => profile::edit_glob_ext_conf(editor)?,
+            ProfileArgs::ViewGlobalExtendScript { viewer } => {
+                profile_global::view_ext_script(viewer)?
+            }
+            ProfileArgs::EditGlobalExtendConfig { editor } => {
+                profile_global::edit_ext_conf(editor)?
+            }
             ProfileArgs::EditGlobalExtendScript { editor } => {
-                profile::edit_glob_ext_script(editor)?
+                profile_global::edit_ext_script(editor)?
             }
         },
         Args::Connection(args) => match args {
