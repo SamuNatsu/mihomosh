@@ -63,7 +63,7 @@ impl Config {
         static INSTANCE: OnceLock<Config> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             let path = Self::get_path();
-            let file = File::open(&path)
+            let file = File::open(path)
                 .with_context(|| format!("Fail to open file `{}`", path.display()))
                 .unwrap();
 
@@ -77,13 +77,13 @@ impl Config {
         // Verify
         let value =
             serde_yml::from_str::<Self>(contents.as_ref()).context("Fail to parse contents")?;
-        if value.port.map_or(false, |p| p == 0) {
+        if value.port == Some(0) {
             bail!("`port` cannot be 0");
         }
-        if value.socks_port.map_or(false, |p| p == 0) {
+        if value.socks_port == Some(0) {
             bail!("`socks-port` cannot be 0");
         }
-        if value.mixed_port.map_or(false, |p| p == 0) {
+        if value.mixed_port == Some(0) {
             bail!("`mixed-port` cannot be 0");
         }
 
@@ -98,7 +98,7 @@ impl Config {
 
     pub fn reset() -> Result<()> {
         let path = Self::get_path();
-        fs::write(&path, DEFAULT_CONFIG_TEMPLATE)
+        fs::write(path, DEFAULT_CONFIG_TEMPLATE)
             .with_context(|| format!("Fail to write file `{}`", path.display()))?;
 
         Ok(())

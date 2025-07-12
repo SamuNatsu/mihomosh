@@ -41,11 +41,7 @@ pub fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
         uuid.clone(),
         Meta {
             name: profile.name.clone().trim().to_string(),
-            is_remote: if let ProfileType::Local = profile.r#type {
-                false
-            } else {
-                true
-            },
+            is_remote: matches!(profile.r#type, ProfileType::Remote),
             ..old_meta
         },
     );

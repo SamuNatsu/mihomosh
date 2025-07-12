@@ -21,7 +21,7 @@ pub async fn view() -> Result<()> {
     });
 
     // If no connection
-    if conns.len() == 0 {
+    if conns.is_empty() {
         println_secondary!("No connection");
         return Ok(());
     }
@@ -123,7 +123,7 @@ pub async fn close(
         // Type
         if let Some(t) = &r#type {
             if !t.iter().any(|v| {
-                v.trim() == &format!("{}({})", conn.metadata.r#type, conn.metadata.network)
+                *v.trim() == format!("{}({})", conn.metadata.r#type, conn.metadata.network)
             }) {
                 continue;
             }
@@ -133,7 +133,7 @@ pub async fn close(
         if let Some(h) = &host {
             if !h.iter().any(|v| {
                 Wildcard::new(v.trim().as_bytes())
-                    .and_then(|w| Ok(w.is_match(conn.metadata.host.as_bytes())))
+                    .map(|w| w.is_match(conn.metadata.host.as_bytes()))
                     .unwrap_or(false)
             }) {
                 continue;
@@ -151,11 +151,11 @@ pub async fn close(
         if let Some(h) = &source {
             if !h.iter().any(|v| {
                 Wildcard::new(v.trim().as_bytes())
-                    .and_then(|w| {
-                        Ok(w.is_match(
+                    .map(|w| {
+                        w.is_match(
                             format!("{}:{}", conn.metadata.source_ip, conn.metadata.source_port)
                                 .as_bytes(),
-                        ))
+                        )
                     })
                     .unwrap_or(false)
             }) {
@@ -167,14 +167,14 @@ pub async fn close(
         if let Some(d) = &destination {
             if !d.iter().any(|v| {
                 Wildcard::new(v.trim().as_bytes())
-                    .and_then(|w| {
-                        Ok(w.is_match(
+                    .map(|w| {
+                        w.is_match(
                             format!(
                                 "{}:{}",
                                 conn.metadata.destination_ip, conn.metadata.destination_port
                             )
                             .as_bytes(),
-                        ))
+                        )
                     })
                     .unwrap_or(false)
             }) {
@@ -200,7 +200,7 @@ pub async fn close(
                     format!("({})", conn.rule_payload)
                 }
             );
-            if !r.iter().any(|v| v.trim() == &rule) {
+            if !r.iter().any(|v| v.trim() == rule) {
                 continue;
             }
         }
@@ -212,7 +212,7 @@ pub async fn close(
     println_secondary!("{} connection(s) found", filtered.len());
 
     // If no connection found
-    if filtered.len() == 0 {
+    if filtered.is_empty() {
         println_success!("No connection to be closed");
         return Ok(());
     }

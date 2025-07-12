@@ -60,9 +60,9 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
             // Create tasks
             let mut set = JoinSet::new();
             for uuid in uuid {
-                set.spawn((async move || -> (String, Result<SubUserInfo>) {
+                set.spawn(async {
                     let uuid = uuid;
-                    let res = (async || -> Result<SubUserInfo> {
+                    let res: Result<SubUserInfo> = async {
                         let profile = Profile::load(&uuid)
                             .with_context(|| format!("Fail to load profile with UUID `{uuid}`"))?;
 
@@ -79,11 +79,11 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
 
                         println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
                         Ok(info)
-                    })()
+                    }
                     .await;
 
                     (uuid, res)
-                })());
+                });
             }
 
             // Solve tasks
@@ -138,15 +138,8 @@ pub fn create(editor: String) -> Result<()> {
         uuid.clone(),
         Meta {
             name: profile.name.clone().trim().to_string(),
-            is_remote: if let ProfileType::Local = profile.r#type {
-                false
-            } else {
-                true
-            },
-            updated_at: None,
-            expired_at: None,
-            used_bytes: None,
-            total_bytes: None,
+            is_remote: matches!(profile.r#type, ProfileType::Remote),
+            ..Default::default()
         },
     );
 
@@ -216,7 +209,7 @@ pub fn list() -> Result<()> {
     let meta = Meta::get_instance().lock().unwrap();
 
     // If no profile
-    if meta.len() == 0 {
+    if meta.is_empty() {
         println_secondary!("No profile");
         return Ok(());
     }

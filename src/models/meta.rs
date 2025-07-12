@@ -13,7 +13,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{style_fmt, utils::dir};
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct Meta {
     pub name: String,
     pub is_remote: bool,
@@ -63,7 +63,7 @@ impl Meta {
                 .filter(|(_, v)| v.name == uuid_or_name.as_ref())
                 .collect::<Vec<_>>();
 
-            if entries.len() == 0 {
+            if entries.is_empty() {
                 bail!(
                     "Profile not found with UUID or name `{}`",
                     uuid_or_name.as_ref()
@@ -197,12 +197,12 @@ impl Meta {
 
 fn get_size_str(x: usize) -> String {
     if x < 1_024 {
-        return format!("{}B", x);
+        format!("{x}B")
     } else if x < 1_048_576 {
-        return format!("{:.1}KB", x as f64 / 1_024f64);
+        format!("{:.1}KB", x as f64 / 1_024f64)
     } else if x < 1_073_741_824 {
-        return format!("{:.1}MB", x as f64 / 1_048_576f64);
+        format!("{:.1}MB", x as f64 / 1_048_576f64)
     } else {
-        return format!("{:.1}GB", x as f64 / 1_073_741_824f64);
+        format!("{:.1}GB", x as f64 / 1_073_741_824f64)
     }
 }

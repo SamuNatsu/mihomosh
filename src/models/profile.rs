@@ -67,12 +67,12 @@ impl Profile {
     }
 
     pub fn verify(&self) -> Result<()> {
-        if self.name.trim().len() == 0 {
+        if self.name.trim().is_empty() {
             bail!("name cannot be empty");
         }
 
         if let ProfileType::Remote = self.r#type {
-            if self.user_agent.as_deref().unwrap_or("").trim().len() == 0 {
+            if self.user_agent.as_deref().unwrap_or("").trim().is_empty() {
                 bail!("`user-agent` cannot be empty");
             }
 
@@ -134,7 +134,7 @@ impl Profile {
         if let Some(h) = resp.headers().get("Subscription-Userinfo") {
             let segments = h
                 .to_str()
-                .with_context(|| format!("Fail to parse header `{:?}`", h))?
+                .with_context(|| format!("Fail to parse header `{h:?}`"))?
                 .split(';');
             for seg in segments {
                 if let Some((k, v)) = seg.trim().split_once('=') {
