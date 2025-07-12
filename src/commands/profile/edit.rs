@@ -3,6 +3,7 @@ use std::fs;
 use anyhow::{Context, Result};
 
 use crate::{
+    arguments::profile::ProfileEditArgs,
     includes::{DEFAULT_EXTEND_CONFIG_TEMPLATE, DEFAULT_EXTEND_SCRIPT_TEMPLATE},
     models::{
         meta::Meta,
@@ -12,7 +13,29 @@ use crate::{
     utils::{file, prompt},
 };
 
-pub fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
+pub fn handle_edit(args: ProfileEditArgs) -> Result<()> {
+    match args {
+        ProfileEditArgs::Info {
+            uuid_or_name,
+            editor,
+        } => edit_info(uuid_or_name, editor)?,
+        ProfileEditArgs::File {
+            uuid_or_name,
+            editor,
+        } => edit_file(uuid_or_name, editor)?,
+        ProfileEditArgs::ExtendConfig {
+            uuid_or_name,
+            editor,
+        } => edit_ext_conf(uuid_or_name, editor)?,
+        ProfileEditArgs::ExtendScript {
+            uuid_or_name,
+            editor,
+        } => edit_ext_script(uuid_or_name, editor)?,
+    }
+    Ok(())
+}
+
+fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
     // Edit profile
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
@@ -59,7 +82,7 @@ pub fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()
@@ -79,7 +102,7 @@ pub fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()
@@ -99,7 +122,7 @@ pub fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_ext_script(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_ext_script(uuid_or_name: String, editor: String) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()

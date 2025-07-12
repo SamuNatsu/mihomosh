@@ -73,26 +73,16 @@ impl Config {
         })
     }
 
-    pub fn update<S: AsRef<str>>(contents: S) -> Result<()> {
-        // Verify
-        let value =
-            serde_yml::from_str::<Self>(contents.as_ref()).context("Fail to parse contents")?;
-        if value.port == Some(0) {
+    pub fn verify(&self) -> Result<()> {
+        if self.port == Some(0) {
             bail!("`port` cannot be 0");
         }
-        if value.socks_port == Some(0) {
+        if self.socks_port == Some(0) {
             bail!("`socks-port` cannot be 0");
         }
-        if value.mixed_port == Some(0) {
+        if self.mixed_port == Some(0) {
             bail!("`mixed-port` cannot be 0");
         }
-
-        // Write file
-        let path = Self::get_path();
-        fs::write(path, contents.as_ref())
-            .with_context(|| format!("Fail to write file `{}`", path.display()))?;
-
-        // Success
         Ok(())
     }
 

@@ -1,13 +1,30 @@
 use anyhow::{Context, Result};
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Utc};
 use tokio::task::JoinSet;
 use wildcard::Wildcard;
 
 use crate::{
-    models::config::Config, println_danger, println_secondary, println_success, style_fmt,
+    arguments::connection::ConnectionArgs, models::config::Config, println_danger,
+    println_secondary, println_success, println_warn, utils::api::resp::Connection,
 };
 
-pub async fn view() -> Result<()> {
+pub async fn handle_connection(args: ConnectionArgs) -> Result<()> {
+    match args {
+        ConnectionArgs::View => view().await?,
+        ConnectionArgs::Close {
+            r#type,
+            host,
+            process,
+            source,
+            destination,
+            chain,
+            rule,
+        } => close(r#type, host, process, source, destination, chain, rule).await?,
+    }
+    Ok(())
+}
+
+async fn view() -> Result<()> {
     // Get & sort connections
     let mut conns = Config::get_instance()
         .get_api()
@@ -29,37 +46,19 @@ pub async fn view() -> Result<()> {
     // Print connection list
     for conn in conns {
         // Start time & matched rule
-        let start = conn
-            .start
-            .parse::<DateTime<Local>>()?
-            .format("%Y-%m-%dT%H:%M:%S.%3f%:z")
-            .to_string();
+        let start = conn.get_start().context("Fail to get start time")?;
         println!(
             "Start: {}\tRule: {}",
             console::style(start).green(),
-            style_fmt!(
-                "{}{}",
-                conn.rule,
-                if conn.rule_payload.is_empty() {
-                    "".to_owned()
-                } else {
-                    format!("({})", conn.rule_payload)
-                }
-            )
-            .yellow()
+            console::style(conn.get_rule()).yellow()
         );
 
         // Type, source & destination
         println!(
             "Type: {}\t SRC: {}\tDST: {}",
-            style_fmt!("{}({})", conn.metadata.r#type, conn.metadata.network).cyan(),
-            style_fmt!("{}:{}", conn.metadata.source_ip, conn.metadata.source_port).magenta(),
-            style_fmt!(
-                "{}:{}",
-                conn.metadata.destination_ip,
-                conn.metadata.destination_port
-            )
-            .magenta()
+            console::style(conn.get_type()).cyan(),
+            console::style(conn.get_src()).magenta(),
+            console::style(conn.get_dst()).magenta()
         );
 
         // Host & process
@@ -83,7 +82,7 @@ pub async fn view() -> Result<()> {
     Ok(())
 }
 
-pub async fn close(
+async fn close(
     r#type: Option<Vec<String>>,
     host: Option<Vec<String>>,
     process: Option<Vec<String>>,
@@ -120,95 +119,17 @@ pub async fn close(
     let mut filtered = Vec::new();
 
     for conn in conns {
-        // Type
-        if let Some(t) = &r#type {
-            if !t.iter().any(|v| {
-                *v.trim() == format!("{}({})", conn.metadata.r#type, conn.metadata.network)
-            }) {
-                continue;
-            }
+        if filter_by_type(&r#type, &conn)
+            && filter_by_host(&host, &conn)
+            && filter_by_process(&process, &conn)
+            && filter_by_source(&source, &conn)
+            && filter_by_destination(&destination, &conn)
+            && filter_by_chain(&chain, &conn)
+            && filter_by_rule(&rule, &conn)
+        {
+            filtered.push(conn);
         }
-
-        // Host
-        if let Some(h) = &host {
-            if !h.iter().any(|v| {
-                Wildcard::new(v.trim().as_bytes())
-                    .map(|w| w.is_match(conn.metadata.host.as_bytes()))
-                    .unwrap_or(false)
-            }) {
-                continue;
-            }
-        }
-
-        // Process
-        if let Some(p) = &process {
-            if !p.iter().any(|v| v.trim() == conn.metadata.process) {
-                continue;
-            }
-        }
-
-        // Source
-        if let Some(h) = &source {
-            if !h.iter().any(|v| {
-                Wildcard::new(v.trim().as_bytes())
-                    .map(|w| {
-                        w.is_match(
-                            format!("{}:{}", conn.metadata.source_ip, conn.metadata.source_port)
-                                .as_bytes(),
-                        )
-                    })
-                    .unwrap_or(false)
-            }) {
-                continue;
-            }
-        }
-
-        // Destination
-        if let Some(d) = &destination {
-            if !d.iter().any(|v| {
-                Wildcard::new(v.trim().as_bytes())
-                    .map(|w| {
-                        w.is_match(
-                            format!(
-                                "{}:{}",
-                                conn.metadata.destination_ip, conn.metadata.destination_port
-                            )
-                            .as_bytes(),
-                        )
-                    })
-                    .unwrap_or(false)
-            }) {
-                continue;
-            }
-        }
-
-        // Chain
-        if let Some(c) = &chain {
-            if !c.iter().any(|v| conn.chains.iter().any(|w| v.trim() == w)) {
-                continue;
-            }
-        }
-
-        // Rule
-        if let Some(r) = &rule {
-            let rule = format!(
-                "{}{}",
-                conn.rule,
-                if conn.rule_payload.is_empty() {
-                    "".to_owned()
-                } else {
-                    format!("({})", conn.rule_payload)
-                }
-            );
-            if !r.iter().any(|v| v.trim() == rule) {
-                continue;
-            }
-        }
-
-        // Found
-        filtered.push(conn);
     }
-
     println_secondary!("{} connection(s) found", filtered.len());
 
     // If no connection found
@@ -227,24 +148,14 @@ pub async fn close(
                 .await;
             match ret {
                 Ok(_) => println_success!(
-                    "Closed: process=`{}` dst=`{}:{}`",
+                    "Closed: process=`{}` dst=`{}`",
                     conn.metadata.process,
-                    if conn.metadata.host.is_empty() {
-                        conn.metadata.destination_ip
-                    } else {
-                        conn.metadata.host
-                    },
-                    conn.metadata.destination_port
+                    conn.get_dst()
                 ),
                 Err(err) => println_danger!(
-                    "Fail: process=`{}` dst=`{}:{}` err=`{}`",
+                    "Fail: process=`{}` dst=`{}` err=`{}`",
                     conn.metadata.process,
-                    if conn.metadata.host.is_empty() {
-                        conn.metadata.destination_ip
-                    } else {
-                        conn.metadata.host
-                    },
-                    conn.metadata.destination_port,
+                    conn.get_dst(),
                     err
                 ),
             }
@@ -254,4 +165,90 @@ pub async fn close(
 
     // Success
     Ok(())
+}
+
+fn filter_by_type(r#type: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(t) = &r#type {
+        t.iter().any(|v| *v.trim() == conn.get_type())
+    } else {
+        true
+    }
+}
+
+fn filter_by_host(host: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(h) = &host {
+        h.iter().any(|v| {
+            let ret = Wildcard::new(v.trim().as_bytes())
+                .map(|w| w.is_match(conn.metadata.host.as_bytes()));
+            match ret {
+                Ok(ret) => ret,
+                Err(err) => {
+                    println_warn!("{err:?}");
+                    true
+                }
+            }
+        })
+    } else {
+        true
+    }
+}
+
+fn filter_by_process(process: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(p) = &process {
+        p.iter().any(|v| v.trim() == conn.metadata.process)
+    } else {
+        true
+    }
+}
+
+fn filter_by_source(source: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(h) = &source {
+        h.iter().any(|v| {
+            let ret =
+                Wildcard::new(v.trim().as_bytes()).map(|w| w.is_match(conn.get_src().as_bytes()));
+            match ret {
+                Ok(ret) => ret,
+                Err(err) => {
+                    println_warn!("{err:?}");
+                    true
+                }
+            }
+        })
+    } else {
+        true
+    }
+}
+
+fn filter_by_destination(destination: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(d) = &destination {
+        d.iter().any(|v| {
+            let ret =
+                Wildcard::new(v.trim().as_bytes()).map(|w| w.is_match(conn.get_dst().as_bytes()));
+            match ret {
+                Ok(ret) => ret,
+                Err(err) => {
+                    println_warn!("{err:?}");
+                    true
+                }
+            }
+        })
+    } else {
+        true
+    }
+}
+
+fn filter_by_chain(chain: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(c) = &chain {
+        c.iter().any(|v| conn.chains.iter().any(|w| v.trim() == w))
+    } else {
+        true
+    }
+}
+
+fn filter_by_rule(rule: &Option<Vec<String>>, conn: &Connection) -> bool {
+    if let Some(r) = &rule {
+        r.iter().any(|v| v.trim() == conn.get_rule())
+    } else {
+        true
+    }
 }

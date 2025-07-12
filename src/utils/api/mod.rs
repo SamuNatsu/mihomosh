@@ -1,3 +1,5 @@
+pub mod resp;
+
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::{Context, Error, Result, anyhow};
@@ -371,70 +373,5 @@ impl Config {
             api: self.mihomo_api.clone(),
             secret: self.mihomo_secret.clone(),
         }
-    }
-}
-
-pub mod resp {
-    use serde::Deserialize;
-
-    #[derive(Deserialize)]
-    pub struct Proxy {
-        pub alive: bool,
-        pub history: ProxyHistory,
-        pub id: String,
-        pub all: Vec<String>,
-        pub name: String,
-        pub now: String,
-        pub r#type: String,
-        pub udp: bool,
-    }
-
-    #[derive(Deserialize)]
-    pub struct ProxyHistory {
-        pub time: String,
-        pub delay: i64,
-    }
-
-    #[derive(Deserialize)]
-    pub struct Rule {
-        pub r#type: String,
-        pub payload: String,
-        pub proxy: String,
-    }
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct RuleSet {
-        pub name: String,
-        pub vehicle_type: String,
-        pub r#type: String,
-        pub behavior: String,
-        pub update_at: Option<String>,
-    }
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct Connection {
-        pub id: String,
-        pub metadata: ConnectionMetadata,
-        pub chains: Vec<String>,
-        pub start: String,
-        pub rule: String,
-        pub rule_payload: String,
-    }
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct ConnectionMetadata {
-        pub network: String,
-        pub r#type: String,
-        pub host: String,
-        pub process: String,
-        #[serde(rename(deserialize = "sourceIP"))]
-        pub source_ip: String,
-        pub source_port: String,
-        #[serde(rename(deserialize = "destinationIP"))]
-        pub destination_ip: String,
-        pub destination_port: String,
     }
 }

@@ -1,8 +1,18 @@
 use anyhow::{Context, Result};
 
-use crate::{models::config::Config, println_success};
+use crate::{arguments::control::ControlArgs, models::config::Config, println_success};
 
-pub async fn flush_cache() -> Result<()> {
+pub async fn handle_control(args: ControlArgs) -> Result<()> {
+    match args {
+        ControlArgs::FlushCache => flush_cache().await?,
+        ControlArgs::UpdateUi => update_ui().await?,
+        ControlArgs::UpdateGeo => update_geo().await?,
+        ControlArgs::Restart => restart().await?,
+    }
+    Ok(())
+}
+
+async fn flush_cache() -> Result<()> {
     Config::get_instance()
         .get_api()
         .flush_fake_ip_cache()
@@ -13,7 +23,7 @@ pub async fn flush_cache() -> Result<()> {
     Ok(())
 }
 
-pub async fn update_ui() -> Result<()> {
+async fn update_ui() -> Result<()> {
     Config::get_instance()
         .get_api()
         .upgrade_ui()
@@ -24,7 +34,7 @@ pub async fn update_ui() -> Result<()> {
     Ok(())
 }
 
-pub async fn update_geo() -> Result<()> {
+async fn update_geo() -> Result<()> {
     Config::get_instance()
         .get_api()
         .upgrade_geo()
@@ -35,7 +45,7 @@ pub async fn update_geo() -> Result<()> {
     Ok(())
 }
 
-pub async fn restart() -> Result<()> {
+async fn restart() -> Result<()> {
     Config::get_instance()
         .get_api()
         .restart()

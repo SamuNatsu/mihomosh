@@ -1,9 +1,21 @@
 use anyhow::{Context, Result, bail};
 use futures::StreamExt;
 
-use crate::{models::config::Config, println_primary, println_success};
+use crate::{
+    arguments::inspect::InspectArgs, models::config::Config, println_primary, println_success,
+};
 
-pub async fn log() -> Result<()> {
+pub async fn handle_inspect(args: InspectArgs) -> Result<()> {
+    match args {
+        InspectArgs::Log => log().await?,
+        InspectArgs::Traffic => traffic().await?,
+        InspectArgs::Memory => memory().await?,
+        InspectArgs::Version => version().await?,
+    }
+    Ok(())
+}
+
+async fn log() -> Result<()> {
     println_primary!("Start tracing Mihomo logs...");
 
     // Create stream
@@ -26,7 +38,7 @@ pub async fn log() -> Result<()> {
     Ok(())
 }
 
-pub async fn traffic() -> Result<()> {
+async fn traffic() -> Result<()> {
     println_primary!("Start tracing Mihomo traffic...");
 
     // Create stream
@@ -50,7 +62,7 @@ pub async fn traffic() -> Result<()> {
     Ok(())
 }
 
-pub async fn memory() -> Result<()> {
+async fn memory() -> Result<()> {
     println_primary!("Start tracing Mihomo memory usage...");
 
     // Create stream
@@ -70,7 +82,7 @@ pub async fn memory() -> Result<()> {
     Ok(())
 }
 
-pub async fn version() -> Result<()> {
+async fn version() -> Result<()> {
     let version = Config::get_instance()
         .get_api()
         .get_version()

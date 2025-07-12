@@ -1,3 +1,7 @@
+mod edit;
+mod global;
+mod view;
+
 use std::fs;
 
 use anyhow::{Context, Result};
@@ -6,108 +10,98 @@ use rand::{TryRngCore, rngs::OsRng};
 use tokio::task::JoinSet;
 
 use crate::{
+    arguments::profile::ProfileArgs,
     includes::DEFAULT_PROFILE_TEMPLATE,
     models::{
         meta::Meta,
         profile::{Profile, ProfileType, SubUserInfo},
     },
-    println_danger, println_primary, println_secondary, println_success,
+    println_danger, println_secondary, println_success,
     utils::{file, prompt},
 };
 
+pub async fn handle_profile(args: ProfileArgs) -> Result<()> {
+    match args {
+        ProfileArgs::Update { uuid_or_name } => update(uuid_or_name).await?,
+        ProfileArgs::Activate { uuid_or_name } => todo!(),
+        ProfileArgs::Create { editor } => create(editor)?,
+        ProfileArgs::Delete { uuid_or_name } => delete(uuid_or_name)?,
+        ProfileArgs::List => list()?,
+        ProfileArgs::View(args) => view::handle_view(args)?,
+        ProfileArgs::Edit(args) => edit::handle_edit(args)?,
+        ProfileArgs::ViewGlobalExtendConfig { viewer } => global::view_ext_conf(viewer)?,
+        ProfileArgs::ViewGlobalExtendScript { viewer } => global::view_ext_script(viewer)?,
+        ProfileArgs::EditGlobalExtendConfig { editor } => global::edit_ext_conf(editor)?,
+        ProfileArgs::EditGlobalExtendScript { editor } => global::edit_ext_script(editor)?,
+    }
+    Ok(())
+}
+
 pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
-    match uuid_or_name {
-        Some(uuid_or_name) => {
-            let uuid = Meta::find_uuid_or_name(&uuid_or_name)
-                .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
-            let profile = Profile::load(&uuid).with_context(|| {
-                format!("Fail to load profile with UUID or name `{uuid_or_name}`")
-            })?;
+    let uuid = match uuid_or_name {
+        Some(uuid_or_name) => vec![
+            Meta::find_uuid_or_name(&uuid_or_name)
+                .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?,
+        ],
+        None => Meta::get_instance()
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, v)| v.is_remote)
+            .map(|(k, _)| k.clone())
+            .collect::<Vec<_>>(),
+    };
+    if uuid.is_empty() {
+        println_secondary!("No profile to be updated");
+        return Ok(());
+    }
+    println_secondary!("{} profile(s) to be updated", uuid.len());
 
-            // Fetch data
-            println_primary!("Updating profile `{}` with UUID `{uuid}`...", profile.name);
-            let info = profile.update(&uuid).await.with_context(|| {
-                format!(
-                    "Fail to update profile `{}`, with UUID `{uuid}`",
-                    profile.name
-                )
-            })?;
+    // Create tasks
+    let mut set = JoinSet::new();
+    for uuid in uuid {
+        set.spawn(async {
+            let uuid = uuid;
+            let res: Result<SubUserInfo> = async {
+                let profile = Profile::load(&uuid)
+                    .with_context(|| format!("Fail to load profile with UUID `{uuid}`"))?;
+                let info = profile.update(&uuid).await.with_context(|| {
+                    format!(
+                        "Fail to update profile `{}`, with UUID `{uuid}`",
+                        profile.name
+                    )
+                })?;
 
-            // Update metadata
-            let mut meta_map = Meta::get_instance().lock().unwrap();
-            let meta = meta_map.get_mut(&uuid).unwrap();
-            meta.used_bytes = info.used;
-            meta.total_bytes = info.total;
-            meta.expired_at = info.expired_at;
-            meta.updated_at = Some(Utc::now().timestamp());
-
-            drop(meta_map);
-            Meta::flush().context("Fail to flush metadata")?;
-
-            // Success
-            println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
-            Ok(())
-        }
-        None => {
-            let uuid = Meta::get_instance()
-                .lock()
-                .unwrap()
-                .iter()
-                .filter(|(_, v)| v.is_remote)
-                .map(|(k, _)| k.clone())
-                .collect::<Vec<_>>();
-
-            // Create tasks
-            let mut set = JoinSet::new();
-            for uuid in uuid {
-                set.spawn(async {
-                    let uuid = uuid;
-                    let res: Result<SubUserInfo> = async {
-                        let profile = Profile::load(&uuid)
-                            .with_context(|| format!("Fail to load profile with UUID `{uuid}`"))?;
-
-                        println_primary!(
-                            "Updating profile `{}` with UUID `{uuid}`...",
-                            profile.name
-                        );
-                        let info = profile.update(&uuid).await.with_context(|| {
-                            format!(
-                                "Fail to update profile `{}`, with UUID `{uuid}`",
-                                profile.name
-                            )
-                        })?;
-
-                        println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
-                        Ok(info)
-                    }
-                    .await;
-
-                    (uuid, res)
-                });
+                println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
+                Ok(info)
             }
+            .await;
 
-            // Solve tasks
-            let res = set.join_all().await;
-            let mut meta_map = Meta::get_instance().lock().unwrap();
-            for (uuid, res) in res {
-                match res {
-                    Ok(info) => {
-                        let meta = meta_map.get_mut(&uuid).unwrap();
-                        meta.used_bytes = info.used;
-                        meta.total_bytes = info.total;
-                        meta.expired_at = info.expired_at;
-                        meta.updated_at = Some(Utc::now().timestamp());
-                    }
-                    Err(err) => {
-                        println_danger!("{err:?}");
-                    }
-                }
+            (uuid, res)
+        });
+    }
+
+    // Resolve tasks
+    let res = set.join_all().await;
+    let mut meta_map = Meta::get_instance().lock().unwrap();
+    for (uuid, res) in res {
+        match res {
+            Ok(info) => {
+                let meta = meta_map.get_mut(&uuid).unwrap();
+                meta.used_bytes = info.used;
+                meta.total_bytes = info.total;
+                meta.expired_at = info.expired_at;
+                meta.updated_at = Some(Utc::now().timestamp());
             }
-            drop(meta_map);
-            Meta::flush().context("Fail to flush metadata")?;
-            Ok(())
+            Err(err) => {
+                println_danger!("{err:?}");
+            }
         }
     }
+
+    drop(meta_map);
+    Meta::flush().context("Fail to flush metadata")?;
+    Ok(())
 }
 
 pub fn create(editor: String) -> Result<()> {
@@ -173,25 +167,17 @@ pub fn delete(uuid_or_name: String) -> Result<()> {
     }
 
     // Delete files
-    let path = Profile::get_path(&uuid);
-    fs::remove_file(&path).with_context(|| format!("Fail to remove file `{}`", path.display()))?;
-
-    let path = Profile::get_data_path(&uuid);
-    if path.is_file() {
-        fs::remove_file(&path)
-            .with_context(|| format!("Fail to remove file `{}`", path.display()))?;
-    }
-
-    let path = Profile::get_ext_conf_path(&uuid);
-    if path.is_file() {
-        fs::remove_file(&path)
-            .with_context(|| format!("Fail to remove file `{}`", path.display()))?;
-    }
-
-    let path = Profile::get_ext_script_path(&uuid);
-    if path.is_file() {
-        fs::remove_file(&path)
-            .with_context(|| format!("Fail to remove file `{}`", path.display()))?;
+    let path = vec![
+        Profile::get_path(&uuid),
+        Profile::get_data_path(&uuid),
+        Profile::get_ext_conf_path(&uuid),
+        Profile::get_ext_script_path(&uuid),
+    ];
+    for path in path {
+        if path.is_file() {
+            fs::remove_file(&path)
+                .with_context(|| format!("Fail to remove file `{}`", path.display()))?;
+        }
     }
 
     // Update metadata
