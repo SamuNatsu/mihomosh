@@ -1,17 +1,114 @@
 use std::fs;
 
 use anyhow::{Context, Result};
+use chrono::Utc;
 use rand::{TryRngCore, rngs::OsRng};
+use tokio::task::JoinSet;
 
 use crate::{
     includes::DEFAULT_PROFILE_TEMPLATE,
     models::{
         meta::Meta,
-        profile::{Profile, ProfileType},
+        profile::{Profile, ProfileType, SubUserInfo},
     },
-    println_secondary, println_success,
+    println_danger, println_primary, println_secondary, println_success,
     utils::{file, prompt},
 };
+
+pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
+    match uuid_or_name {
+        Some(uuid_or_name) => {
+            let uuid = Meta::find_uuid_or_name(&uuid_or_name)
+                .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
+            let profile = Profile::load(&uuid).with_context(|| {
+                format!("Fail to load profile with UUID or name `{uuid_or_name}`")
+            })?;
+
+            // Fetch data
+            println_primary!("Updating profile `{}` with UUID `{uuid}`...", profile.name);
+            let info = profile.update(&uuid).await.with_context(|| {
+                format!(
+                    "Fail to update profile `{}`, with UUID `{uuid}`",
+                    profile.name
+                )
+            })?;
+
+            // Update metadata
+            let mut meta_map = Meta::get_instance().lock().unwrap();
+            let meta = meta_map.get_mut(&uuid).unwrap();
+            meta.used_bytes = info.used;
+            meta.total_bytes = info.total;
+            meta.expired_at = info.expired_at;
+            meta.updated_at = Some(Utc::now().timestamp());
+
+            drop(meta_map);
+            Meta::flush().context("Fail to flush metadata")?;
+
+            // Success
+            println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
+            Ok(())
+        }
+        None => {
+            let uuid = Meta::get_instance()
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|(_, v)| v.is_remote)
+                .map(|(k, _)| k.clone())
+                .collect::<Vec<_>>();
+
+            // Create tasks
+            let mut set = JoinSet::new();
+            for uuid in uuid {
+                set.spawn((async move || -> (String, Result<SubUserInfo>) {
+                    let uuid = uuid;
+                    let res = (async || -> Result<SubUserInfo> {
+                        let profile = Profile::load(&uuid)
+                            .with_context(|| format!("Fail to load profile with UUID `{uuid}`"))?;
+
+                        println_primary!(
+                            "Updating profile `{}` with UUID `{uuid}`...",
+                            profile.name
+                        );
+                        let info = profile.update(&uuid).await.with_context(|| {
+                            format!(
+                                "Fail to update profile `{}`, with UUID `{uuid}`",
+                                profile.name
+                            )
+                        })?;
+
+                        println_success!("Profile `{}` with UUID `{uuid}` updated", profile.name);
+                        Ok(info)
+                    })()
+                    .await;
+
+                    (uuid, res)
+                })());
+            }
+
+            // Solve tasks
+            let res = set.join_all().await;
+            let mut meta_map = Meta::get_instance().lock().unwrap();
+            for (uuid, res) in res {
+                match res {
+                    Ok(info) => {
+                        let meta = meta_map.get_mut(&uuid).unwrap();
+                        meta.used_bytes = info.used;
+                        meta.total_bytes = info.total;
+                        meta.expired_at = info.expired_at;
+                        meta.updated_at = Some(Utc::now().timestamp());
+                    }
+                    Err(err) => {
+                        println_danger!("{err:?}");
+                    }
+                }
+            }
+            drop(meta_map);
+            Meta::flush().context("Fail to flush metadata")?;
+            Ok(())
+        }
+    }
+}
 
 pub fn create(editor: String) -> Result<()> {
     let mut meta_map = Meta::get_instance().lock().unwrap();

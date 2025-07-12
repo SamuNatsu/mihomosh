@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
             ConfigArgs::Reset => config::reset()?,
         },
         Args::Profile(args) => match args {
-            ProfileArgs::Update { uuid_or_name } => (),
+            ProfileArgs::Update { uuid_or_name } => profile::update(uuid_or_name).await?,
             ProfileArgs::Activate { uuid_or_name } => (),
             ProfileArgs::Create { editor } => profile::create(editor)?,
             ProfileArgs::Delete { uuid_or_name } => profile::delete(uuid_or_name)?,
