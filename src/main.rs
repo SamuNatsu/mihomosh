@@ -24,7 +24,13 @@ use crate::{
 };
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    if let Err(err) = run().await {
+        println_danger!("{err:?}");
+    }
+}
+
+async fn run() -> Result<()> {
     match Args::parse() {
         Args::Config(args) => match args {
             ConfigArgs::View { viewer } => config::view(viewer)?,
