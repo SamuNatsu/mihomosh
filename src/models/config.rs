@@ -94,3 +94,25 @@ impl Config {
         Ok(())
     }
 }
+
+impl ConfigMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Rule => "rule",
+            Self::Global => "global",
+            Self::Direct => "direct",
+        }
+    }
+}
+
+impl ConfigLogLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Silent => "silent",
+            Self::Error => "error",
+            Self::Warning => "warning",
+            Self::Info => "info",
+            Self::Debug => "debug",
+        }
+    }
+}

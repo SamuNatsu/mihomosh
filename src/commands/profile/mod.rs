@@ -4,7 +4,7 @@ mod view;
 
 use std::fs;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use chrono::Utc;
 use rand::{TryRngCore, rngs::OsRng};
 use tokio::task::JoinSet;
@@ -16,14 +16,14 @@ use crate::{
         meta::Meta,
         profile::{Profile, ProfileType, SubUserInfo},
     },
-    println_danger, println_secondary, println_success,
-    utils::{file, prompt},
+    println_danger, println_primary, println_secondary, println_success,
+    utils::{dir, file, prompt},
 };
 
 pub async fn handle_profile(args: ProfileArgs) -> Result<()> {
     match args {
         ProfileArgs::Update { uuid_or_name } => update(uuid_or_name).await?,
-        ProfileArgs::Activate { uuid_or_name } => todo!(),
+        ProfileArgs::Activate { uuid_or_name } => activate(uuid_or_name).await?,
         ProfileArgs::Create { editor } => create(editor)?,
         ProfileArgs::Delete { uuid_or_name } => delete(uuid_or_name)?,
         ProfileArgs::List => list()?,
@@ -101,6 +101,43 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
 
     drop(meta_map);
     Meta::flush().context("Fail to flush metadata")?;
+    Ok(())
+}
+
+pub async fn activate(uuid_or_name: Option<String>) -> Result<()> {
+    // Get profile
+    let uuid = match uuid_or_name {
+        Some(uuid_or_name) => Meta::find_uuid_or_name(&uuid_or_name)
+            .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?,
+        None => {
+            let path = dir::get_data_dir().join("last-profile");
+            if !path.is_file() {
+                bail!("No last activated profile, please activate some profile first");
+            }
+            let uuid = fs::read_to_string(&path)
+                .with_context(|| format!("Fail to read file `{}`", path.display()))?;
+            Meta::find_uuid_or_name(&uuid).with_context(|| format!("Fail to find UUID `{uuid}`"))?
+        }
+    };
+    let profile =
+        Profile::load(&uuid).with_context(|| format!("Fail to load profile with UUID `{uuid}`"))?;
+
+    // Activate profile
+    println_primary!(
+        "Activating profile `{}` with UUID `{uuid}`...",
+        profile.name
+    );
+    profile
+        .activate(&uuid)
+        .await
+        .with_context(|| format!("Fail to activate profile with UUID `{uuid}`"))?;
+    println_success!("Profile activated");
+
+    // Save last activated
+    let path = dir::get_data_dir().join("last-profile");
+    fs::write(&path, &uuid).with_context(|| format!("Fail to write file `{}`", path.display()))?;
+
+    // Success
     Ok(())
 }
 

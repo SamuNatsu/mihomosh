@@ -4,12 +4,17 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
+use boa_engine::{
+    Context as BoaContext, Source, js_string, property::Attribute, vm::RuntimeLimits,
+};
+use boa_runtime::RegisterOptions;
 use reqwest::{ClientBuilder, Proxy};
 use serde::Deserialize;
+use serde_yml::{Mapping, Value};
 use url::Url;
 
-use crate::{models::config::Config, utils::dir};
+use crate::{models::config::Config, println_help, utils::dir};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -85,6 +90,90 @@ impl Profile {
             }
         }
 
+        Ok(())
+    }
+
+    pub async fn activate<S: AsRef<str>>(&self, uuid: S) -> Result<()> {
+        let cfg = Config::get_instance();
+
+        // Load data
+        let path = Self::get_data_path(&uuid);
+        let mut value = if path.is_file() {
+            let file = File::open(&path)
+                .with_context(|| format!("Fail to open file `{}`", path.display()))?;
+            serde_yml::from_reader(&file)
+                .with_context(|| format!("Fail to parse file `{}`", path.display()))?
+        } else {
+            Value::Mapping(Mapping::new())
+        };
+
+        // Merge mihomosh configs
+        let tmp = format!(
+            "mode: {}\nallow-lan: {}\nipv6: {}\nunified-delay: {}\nport: {}\nsocks-port: {}\nmixed-port: {}\nlog-level: {}",
+            cfg.mode.as_str(),
+            cfg.allow_lan,
+            cfg.allow_ipv6,
+            cfg.unified_delay,
+            cfg.port.unwrap_or_default(),
+            cfg.socks_port.unwrap_or_default(),
+            cfg.mixed_port.unwrap_or_default(),
+            cfg.log_level.as_str()
+        );
+        let tmp = serde_yml::from_str::<Value>(&tmp).context("Fail to parse prepared configs")?;
+        merge_yaml(&tmp, &mut value);
+
+        // Merge extend configs
+        let path = Self::get_ext_conf_path(&uuid);
+        if path.is_file() {
+            let file = File::open(&path)
+                .with_context(|| format!("Fail to open file `{}`", path.display()))?;
+            let tmp = serde_yml::from_reader(&file)
+                .with_context(|| format!("Fail to parse file `{}`", path.display()))?;
+            merge_yaml(&tmp, &mut value);
+        }
+
+        // Merge extend script
+        let path = Self::get_ext_script_path(&uuid);
+        if path.is_file() {
+            let contents = fs::read_to_string(&path)
+                .with_context(|| format!("Fail to read file `{}`", path.display()))?;
+            merge_scripts("Profile extend script", &contents, &mut value).with_context(|| {
+                format!("Fail to merge extend script from file `{}`", path.display())
+            })?;
+        }
+
+        // Merge global extend configs
+        let path = dir::get_data_dir().join("extend-configs.yaml");
+        if path.is_file() {
+            let file = File::open(&path)
+                .with_context(|| format!("Fail to open file `{}`", path.display()))?;
+            let tmp = serde_yml::from_reader(&file)
+                .with_context(|| format!("Fail to parse file `{}`", path.display()))?;
+            merge_yaml(&tmp, &mut value);
+        }
+
+        // Merge global extend scripts
+        let path = dir::get_data_dir().join("extend-script.js");
+        if path.is_file() {
+            let contents = fs::read_to_string(&path)
+                .with_context(|| format!("Fail to read file `{}`", path.display()))?;
+            merge_scripts("Global extend script", &contents, &mut value).with_context(|| {
+                format!("Fail to merge extend script from file `{}`", path.display())
+            })?;
+        }
+
+        // Write data
+        let data = serde_yml::to_string(&value).context("Fail to serialize configs")?;
+        fs::write(&cfg.mihomo_path, &data)
+            .with_context(|| format!("Fail to write file `{}`", path.display()))?;
+
+        // Restart mihomo
+        cfg.get_api()
+            .restart()
+            .await
+            .context("Fail to restart Mihomo")?;
+
+        // Success
         Ok(())
     }
 
@@ -185,4 +274,80 @@ pub struct SubUserInfo {
     pub used: Option<usize>,
     pub total: Option<usize>,
     pub expired_at: Option<i64>,
+}
+
+fn merge_yaml(src: &Value, dst: &mut Value) {
+    match (src, dst) {
+        (Value::Mapping(src), dst @ &mut Value::Mapping(_)) => {
+            let dst = dst.as_mapping_mut().unwrap();
+            for (k, v) in src {
+                if !dst.contains_key(k) {
+                    dst.insert(k.clone(), v.clone());
+                } else {
+                    merge_yaml(v, &mut dst[&k]);
+                }
+            }
+        }
+        (src, dst) => *dst = src.clone(),
+    }
+}
+
+fn merge_scripts<S1, S2>(name: S1, scripts: S2, dst: &mut Value) -> Result<()>
+where
+    S1: AsRef<str>,
+    S2: AsRef<str>,
+{
+    // Create context
+    let mut context = BoaContext::default();
+
+    // Set runtime limits
+    let mut runtime_limits = RuntimeLimits::default();
+    runtime_limits.set_loop_iteration_limit(1_048_576); // 1M
+    runtime_limits.set_recursion_limit(1_048_576); // 1M
+    runtime_limits.set_stack_size_limit(16_777_216); // 16M
+    context.set_runtime_limits(runtime_limits);
+
+    // Register WebAPI runtime
+    boa_runtime::register(&mut context, RegisterOptions::new())
+        .map_err(|err| anyhow!("{err}"))
+        .context("Fail to register WebAPI runtime")?;
+
+    // Print header
+    println_help!(">>> JS Engine Output: {} <<<", name.as_ref());
+
+    // Evaluate input scripts
+    let source = Source::from_bytes(scripts.as_ref().as_bytes());
+    context
+        .eval(source)
+        .map_err(|err| anyhow!("{err}"))
+        .context("Fail to evaluate script")?;
+
+    // Prepare data
+    let config = serde_json::to_string(dst).context("Fail to stringify raw configs")?;
+    context
+        .register_global_property(
+            js_string!("__RAW_CONFIGS__"),
+            js_string!(config),
+            Attribute::all(),
+        )
+        .map_err(|err| anyhow!("{err}"))
+        .context("Fail to register raw configs")?;
+
+    // Evaluate function
+    let source = Source::from_bytes(r"JSON.stringify(main(JSON.parse(__RAW_CONFIGS__)))");
+    let result = context
+        .eval(source)
+        .map_err(|err| anyhow!("{err}"))
+        .context("Fail to evaluate script")?
+        .to_string(&mut context)
+        .map_err(|err| anyhow!("{err}"))
+        .context("Fail to parse script output")?
+        .to_std_string_escaped();
+
+    // Print footer
+    println_help!(">>> End of Output <<<");
+
+    // Success
+    *dst = serde_json::from_str(&result)?;
+    Ok(())
 }

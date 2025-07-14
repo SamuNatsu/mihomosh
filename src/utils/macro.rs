@@ -37,7 +37,7 @@ macro_rules! str_warn {
 #[macro_export]
 macro_rules! str_help {
     ($($arg:tt)*) => {
-        $crate::style_fmt!($($arg)*).underline().cyan().to_string()
+        $crate::style_fmt!($($arg)*).underlined().cyan().to_string()
     };
 }
 
