@@ -77,6 +77,10 @@ impl Profile {
         }
 
         if let ProfileType::Remote = self.r#type {
+            if self.url.is_none() {
+                bail!("`url` cannot be empty");
+            }
+
             if self.user_agent.as_deref().unwrap_or("").trim().is_empty() {
                 bail!("`user-agent` cannot be empty");
             }
@@ -179,7 +183,7 @@ impl Profile {
 
     pub async fn update<S: AsRef<str>>(&self, uuid: S) -> Result<SubUserInfo> {
         // Check local
-        if let ProfileType::Local = self.r#type {
+        if matches!(self.r#type, ProfileType::Local) {
             bail!("Not allow to update a local profile");
         }
 
@@ -213,7 +217,7 @@ impl Profile {
             .user_agent(self.user_agent.as_ref().unwrap())
             .build()
             .context("Fail to create reqwest client")?
-            .get(self.url.as_ref().unwrap().to_string())
+            .get(self.url.as_ref().unwrap().clone())
             .send()
             .await
             .with_context(|| format!("Fail to send `GET {}`", self.url.as_ref().unwrap()))?;
