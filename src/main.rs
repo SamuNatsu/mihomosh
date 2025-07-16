@@ -23,7 +23,7 @@ async fn main() {
 
 async fn run() -> Result<()> {
     match Args::parse() {
-        Args::Config(args) => config::handle_config(args)?,
+        Args::Config(args) => config::handle_config(args).await?,
         Args::Profile(args) => profile::handle_profile(args).await?,
         Args::Connection(args) => connection::handle_connection(args).await?,
         Args::Inspect(args) => inspect::handle_inspect(args).await?,

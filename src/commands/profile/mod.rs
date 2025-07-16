@@ -31,13 +31,13 @@ pub async fn handle_profile(args: ProfileArgs) -> Result<()> {
         ProfileArgs::Edit(args) => edit::handle_edit(args)?,
         ProfileArgs::ViewGlobalExtendConfig { viewer } => global::view_ext_conf(viewer)?,
         ProfileArgs::ViewGlobalExtendScript { viewer } => global::view_ext_script(viewer)?,
-        ProfileArgs::EditGlobalExtendConfig { editor } => global::edit_ext_conf(editor)?,
-        ProfileArgs::EditGlobalExtendScript { editor } => global::edit_ext_script(editor)?,
+        ProfileArgs::EditGlobalExtendConfig { editor } => global::edit_ext_conf(editor).await?,
+        ProfileArgs::EditGlobalExtendScript { editor } => global::edit_ext_script(editor).await?,
     }
     Ok(())
 }
 
-pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
+async fn update(uuid_or_name: Option<String>) -> Result<()> {
     let uuid = match uuid_or_name {
         Some(uuid_or_name) => vec![
             Meta::find_uuid_or_name(&uuid_or_name)
@@ -101,6 +101,14 @@ pub async fn update(uuid_or_name: Option<String>) -> Result<()> {
 
     drop(meta_map);
     Meta::flush().context("Fail to flush metadata")?;
+
+    // Try reactivate
+    println_primary!("Reactivating last activated profile...");
+    if let Err(err) = activate(None).await {
+        println_danger!("{err:?}");
+    }
+
+    // Success
     Ok(())
 }
 
@@ -141,7 +149,7 @@ pub async fn activate(uuid_or_name: Option<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn create(editor: String) -> Result<()> {
+fn create(editor: String) -> Result<()> {
     let mut meta_map = Meta::get_instance().lock().unwrap();
 
     // Edit temporary file
@@ -187,7 +195,7 @@ pub fn create(editor: String) -> Result<()> {
     Ok(())
 }
 
-pub fn delete(uuid_or_name: String) -> Result<()> {
+fn delete(uuid_or_name: String) -> Result<()> {
     // Get metadata
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
@@ -228,7 +236,7 @@ pub fn delete(uuid_or_name: String) -> Result<()> {
     Ok(())
 }
 
-pub fn list() -> Result<()> {
+fn list() -> Result<()> {
     let meta = Meta::get_instance().lock().unwrap();
 
     // If no profile

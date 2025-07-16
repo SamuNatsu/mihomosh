@@ -4,15 +4,16 @@ use anyhow::{Context, Result, bail};
 
 use crate::{
     arguments::config::ConfigArgs,
+    commands::profile,
     models::config::Config,
-    println_secondary, println_success,
+    println_danger, println_primary, println_secondary, println_success,
     utils::{file, prompt},
 };
 
-pub fn handle_config(args: ConfigArgs) -> Result<()> {
+pub async fn handle_config(args: ConfigArgs) -> Result<()> {
     match args {
         ConfigArgs::View { viewer } => view(viewer)?,
-        ConfigArgs::Edit { editor } => edit(editor)?,
+        ConfigArgs::Edit { editor } => edit(editor).await?,
         ConfigArgs::Reset => reset()?,
     }
     Ok(())
@@ -33,7 +34,7 @@ fn view(viewer: String) -> Result<()> {
     Ok(())
 }
 
-fn edit(editor: String) -> Result<()> {
+async fn edit(editor: String) -> Result<()> {
     // Edit configs
     let path = Config::get_path();
     let contents = fs::read_to_string(path)
@@ -57,9 +58,15 @@ fn edit(editor: String) -> Result<()> {
     let path = Config::get_path();
     fs::write(path, &contents)
         .with_context(|| format!("Fail to write file `{}`", path.display()))?;
+    println_success!("Mihomo configs saved");
+
+    // Try reactivate
+    println_primary!("Reactivating last activated profile...");
+    if let Err(err) = profile::activate(None).await {
+        println_danger!("{err:?}");
+    }
 
     // Success
-    println_success!("Mihomo configs saved");
     Ok(())
 }
 

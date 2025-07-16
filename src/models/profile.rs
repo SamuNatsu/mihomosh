@@ -14,7 +14,7 @@ use serde::Deserialize;
 use serde_yml::{Mapping, Value};
 use url::Url;
 
-use crate::{models::config::Config, println_help, utils::dir};
+use crate::{models::config::Config, println_help, println_warn, utils::dir};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -110,10 +110,17 @@ impl Profile {
         } else {
             Value::Mapping(Mapping::new())
         };
+        if !value.is_mapping() {
+            println_warn!(
+                "Profile data with UUID `{}` is not an object, force to use empty object",
+                uuid.as_ref()
+            );
+            value = Value::Mapping(Mapping::new());
+        }
 
         // Merge mihomosh configs
         let tmp = format!(
-            "mode: {}\nallow-lan: {}\nipv6: {}\nunified-delay: {}\nport: {}\nsocks-port: {}\nmixed-port: {}\nlog-level: {}",
+            "mode: {}\nallow-lan: {}\nipv6: {}\nunified-delay: {}\nport: {}\nsocks-port: {}\nmixed-port: {}\nlog-level: {}\nredir-port: 0\ntproxy-port: 0\n",
             cfg.mode.as_str(),
             cfg.allow_lan,
             cfg.allow_ipv6,
@@ -131,9 +138,17 @@ impl Profile {
         if path.is_file() {
             let file = File::open(&path)
                 .with_context(|| format!("Fail to open file `{}`", path.display()))?;
-            let tmp = serde_yml::from_reader(&file)
+            let tmp: Value = serde_yml::from_reader(&file)
                 .with_context(|| format!("Fail to parse file `{}`", path.display()))?;
-            merge_yaml(&tmp, &mut value);
+
+            if tmp.is_mapping() {
+                merge_yaml(&tmp, &mut value);
+            } else {
+                println_warn!(
+                    "Profile extend configs with UUID `{}` is not an object, skipped",
+                    uuid.as_ref()
+                );
+            }
         }
 
         // Merge extend script
@@ -147,17 +162,22 @@ impl Profile {
         }
 
         // Merge global extend configs
-        let path = dir::get_data_dir().join("extend-configs.yaml");
+        let path = dir::get_data_dir().join("extend.yaml");
         if path.is_file() {
             let file = File::open(&path)
                 .with_context(|| format!("Fail to open file `{}`", path.display()))?;
-            let tmp = serde_yml::from_reader(&file)
+            let tmp: Value = serde_yml::from_reader(&file)
                 .with_context(|| format!("Fail to parse file `{}`", path.display()))?;
-            merge_yaml(&tmp, &mut value);
+
+            if tmp.is_mapping() {
+                merge_yaml(&tmp, &mut value);
+            } else {
+                println_warn!("Global extend configs is not an object, skipped");
+            }
         }
 
         // Merge global extend scripts
-        let path = dir::get_data_dir().join("extend-script.js");
+        let path = dir::get_data_dir().join("extend.js");
         if path.is_file() {
             let contents = fs::read_to_string(&path)
                 .with_context(|| format!("Fail to read file `{}`", path.display()))?;
