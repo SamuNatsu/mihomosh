@@ -6,7 +6,7 @@ use directories::ProjectDirs;
 pub fn get_data_dir() -> &'static PathBuf {
     static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
     INSTANCE.get_or_init(|| {
-        let dir = ProjectDirs::from("io.github", "SNRainiar", "mihomosh")
+        let dir = ProjectDirs::from("io.github", "SamuNatsu", "mihomosh")
             .ok_or(anyhow!("Fail to get project directory"))
             .unwrap()
             .data_local_dir()

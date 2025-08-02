@@ -48,7 +48,7 @@ impl Config {
     pub fn get_path() -> &'static PathBuf {
         static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            let path = dir::get_data_dir().join("config.json");
+            let path = dir::get_data_dir().join("config.yaml");
             if !path.is_file() {
                 fs::write(&path, DEFAULT_CONFIG_TEMPLATE)
                     .with_context(|| format!("Fail to write file `{}`", path.display()))
