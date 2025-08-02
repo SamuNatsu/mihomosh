@@ -35,7 +35,7 @@ Mihomo 外部控制 API 所提供的功能几乎都可以通过 Mihomosh 进行�
 
 ## 先决条件
 
-- 你 **必须** 在你的机器上安装了 Mihomo，且开启了外部控制 API
+- 你的机器上 **必须** 安装了 Mihomo，且开启了外部控制 API
 - _（可选）_ 默认使用 `nano` 作为文件编辑器，不过你可以传入参数自行选择文件编辑器
 - _（可选）_ 默认使用 `less` 作为文件浏览器，不过你可以传入参数自行选择文件浏览器
 
@@ -62,7 +62,7 @@ $ curl https://i.jpillora.com/SamuNatsu/mihomosh@latest! | bash
 
 ### Cargo 编译安装
 
-如果预编译二进制中没有你需要的，你可以通过 Cargo 编译安装一份
+如果预编译二进制中没有你需要的，你可以通过 Cargo 编译安装
 
 ```sh
 $ cargo install --git https://github.com/SamuNatsu/mihomosh.git
@@ -84,7 +84,7 @@ $ mihomosh config edit
 $ mihomosh config edit -e vim
 ```
 
-在编辑器中，你需要修改 `mihomo-path` 和 `mihomo-api` 为对应的配置文件路径和 API，这样之后的 Mihomosh 运行才可以正确地定位和操作 Mihomo
+在编辑器中，你需要修改 `mihomo-path`、`mihomo-api` 和 `mihomo-secret` 为对应的配置文件路径、外部控制 API 和 API token（可选）
 
 ## 版本迁移
 
