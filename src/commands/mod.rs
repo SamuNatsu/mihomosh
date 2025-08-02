@@ -3,3 +3,4 @@ pub mod connection;
 pub mod control;
 pub mod inspect;
 pub mod profile;
+pub mod rule;
