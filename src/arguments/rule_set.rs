@@ -3,8 +3,11 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum RuleSetArgs {
     /// Print all rule sets
-    GetAll,
+    View,
 
-    /// Update all rule sets
-    UpdateAll,
+    /// Update a rule set / Update all rule sets
+    Update {
+        /// Rule set name, update all when not present
+        name: Option<String>,
+    },
 }

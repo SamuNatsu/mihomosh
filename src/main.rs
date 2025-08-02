@@ -11,7 +11,7 @@ use clap::{CommandFactory, Parser};
 
 use crate::{
     arguments::Args,
-    commands::{config, connection, control, inspect, profile, rule},
+    commands::{config, connection, control, inspect, profile, rule, rule_set},
 };
 
 #[tokio::main]
@@ -31,7 +31,7 @@ async fn run() -> Result<()> {
         Args::Proxy(args) => todo!(),
         Args::ProxySet(args) => todo!(),
         Args::Rule => rule::print_rule().await?,
-        Args::RuleSet(args) => todo!(),
+        Args::RuleSet(args) => rule_set::handle_rule_set(args).await?,
         Args::ShellCompletion { shell } => {
             let mut cmd = Args::command();
             let bin_name = cmd.get_name().to_owned();

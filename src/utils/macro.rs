@@ -51,7 +51,7 @@ macro_rules! str_danger {
 #[macro_export]
 macro_rules! str_contrast {
     ($($arg:tt)*) => {
-        $crate::style_fmt!($($arg)*).bold().bright().white().on_black().to_string()
+        $crate::style_fmt!($($arg)*).bold().bright().black().on_white().to_string()
     };
 }
 

@@ -27,14 +27,13 @@ pub struct Rule {
     pub proxy: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuleSet {
     pub name: String,
     pub vehicle_type: String,
     pub r#type: String,
     pub behavior: String,
-    pub update_at: Option<String>,
 }
 
 #[derive(Deserialize)]
