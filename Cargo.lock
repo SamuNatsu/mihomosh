@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "mihomosh"
-version = "2.0.0"
+version = "2.0.0-rc1"
 dependencies = [
  "anyhow",
  "boa_engine",
