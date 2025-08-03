@@ -153,3 +153,11 @@ Options:
 ```sh
 eval "$(mihomosh shell-completion bash)"
 ```
+
+### 代理组选择代理
+
+有些代理组可以手动选择使用的代理（如 GLOBAL 代理组选择使用的全局代理），你可以使用如下命令：
+
+```sh
+$ mihomosh proxy update
+```
