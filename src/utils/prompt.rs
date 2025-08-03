@@ -21,3 +21,12 @@ pub fn confirm<S: AsRef<str>>(msg: S) -> Result<bool> {
         .with_context(|| format!("Fail to show prompt with message `{}`", msg.as_ref()))?;
     Ok(input.to_lowercase() == "y")
 }
+
+pub fn read_int<S: AsRef<str>>(msg: S) -> Result<i32> {
+    let input = prompt(msg.as_ref())
+        .with_context(|| format!("Fail to show prompt with message `{}`", msg.as_ref()))?;
+    let ret = input
+        .parse()
+        .with_context(|| format!("Fail to parse string `{input}` to integer"))?;
+    Ok(ret)
+}

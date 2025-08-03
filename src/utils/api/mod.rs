@@ -189,74 +189,75 @@ impl Api {
         Ok(())
     }
 
-    /// NEEDS REFACTOR
-    pub async fn get_proxies(&self) -> Result<Vec<resp::Proxy>> {
-        let url = format!("{}/version", self.api);
+    pub async fn get_groups(&self) -> Result<Vec<resp::Group>> {
         let ret = self
-            .create_request_builder(Method::GET, url)?
+            .create_request_builder(Method::GET, "group")?
             .send()
-            .await?
-            .error_for_status()?
+            .await
+            .context("Fail to send `GET /group`")?
+            .error_for_status()
+            .context("Fail to request `GET /group`")?
             .json::<Value>()
-            .await?
+            .await
+            .context("Fail to parse response from `GET /group`")?
             .as_object()
-            .ok_or(anyhow!("invalid response body"))?
+            .ok_or(anyhow!("Not an object"))
+            .context("Fail to parse response from `GET /group`")?
             .get("proxies")
-            .ok_or(anyhow!("invalid response body"))?
+            .ok_or(anyhow!("`proxies` key not found"))
+            .context("Fail to parse response from `GET /group`")?
             .clone();
-        let ret = serde_json::from_value::<Vec<resp::Proxy>>(ret)?;
+        let ret = serde_json::from_value::<Option<Vec<resp::Group>>>(ret)
+            .context("Fail to parse response from `GET /group`")?
+            .unwrap_or_default();
 
         Ok(ret)
     }
 
-    /// NEEDS REFACTOR
-    pub async fn select_proxy<S1, S2>(&self, proxy: S1, name: S2) -> Result<()>
+    pub async fn test_group<S1, S2>(
+        &self,
+        name: S1,
+        url: S2,
+        timeout: u64,
+    ) -> Result<HashMap<String, i64>>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
     {
-        let url = format!(
-            "{}/proxies/{}",
-            self.api,
-            urlencoding::encode(proxy.as_ref())
-        );
-        let body = serde_json::to_string(&json!({ "name": name.as_ref() }))?;
-        self.create_request_builder(Method::PUT, url)?
+        let path = format!("group/{}/delay", urlencoding::encode(name.as_ref()));
+        let ret = self
+            .create_request_builder(Method::GET, &path)?
+            .query(&[("url", url.as_ref()), ("timeout", &timeout.to_string())])
+            .send()
+            .await
+            .with_context(|| format!("Fail to send `GET /{path}`"))?
+            .error_for_status()
+            .with_context(|| format!("Fail to send `GET /{path}`"))?
+            .json()
+            .await
+            .with_context(|| format!("Fail to parse response from `GET /{path}`"))?;
+
+        Ok(ret)
+    }
+
+    pub async fn update_proxy<S1, S2>(&self, proxy: S1, name: S2) -> Result<()>
+    where
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+    {
+        let path = format!("proxies/{}", urlencoding::encode(proxy.as_ref()));
+        let body = serde_json::to_string(&json!({ "name": name.as_ref() }))
+            .with_context(|| format!("Fail to create body with name `{}`", name.as_ref()))?;
+
+        self.create_request_builder(Method::PUT, &path)?
             .body(body)
             .send()
-            .await?
-            .error_for_status()?;
+            .await
+            .with_context(|| format!("Fail to send `PUT /{path}`"))?
+            .error_for_status()
+            .with_context(|| format!("Fail to send `PUT /{path}`"))?;
+
         Ok(())
-    }
-
-    /// NEEDS REFACTOR
-    pub async fn test_proxy<S1, S2>(&self, proxy: S1, url: S2, delay: u64) -> Result<i64>
-    where
-        S1: AsRef<str>,
-        S2: AsRef<str>,
-    {
-        let url = format!(
-            "{}/proxies/{}?url={}&timeout={}",
-            self.api,
-            urlencoding::encode(proxy.as_ref()),
-            urlencoding::encode(url.as_ref()),
-            delay
-        );
-        let ret = self
-            .create_request_builder(Method::GET, url)?
-            .send()
-            .await?
-            .error_for_status()?
-            .json::<Value>()
-            .await?
-            .as_object()
-            .ok_or(anyhow!("invalid response body"))?
-            .get("delay")
-            .ok_or(anyhow!("invalid response body"))?
-            .as_i64()
-            .ok_or(anyhow!("invalid response body"))?;
-
-        Ok(ret)
     }
 
     pub async fn get_rules(&self) -> Result<Vec<resp::Rule>> {

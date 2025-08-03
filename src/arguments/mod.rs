@@ -4,7 +4,6 @@ pub mod control;
 pub mod inspect;
 pub mod profile;
 pub mod proxy;
-pub mod proxy_set;
 pub mod rule_set;
 
 use clap::Parser;
@@ -12,7 +11,7 @@ use clap_complete::Shell;
 
 use crate::arguments::{
     config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs, inspect::InspectArgs,
-    profile::ProfileArgs, proxy::ProxyArgs, proxy_set::ProxySetArgs, rule_set::RuleSetArgs,
+    profile::ProfileArgs, proxy::ProxyArgs, rule_set::RuleSetArgs,
 };
 
 /// A Command Line Interface for Mihomo
@@ -42,10 +41,6 @@ pub enum Args {
     /// Print/Update/Test proxies
     #[command(subcommand)]
     Proxy(ProxyArgs),
-
-    /// Print/Update/Test proxy sets
-    #[command(subcommand)]
-    ProxySet(ProxySetArgs),
 
     /// Print rules
     Rule,

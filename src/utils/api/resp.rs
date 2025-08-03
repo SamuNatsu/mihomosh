@@ -3,21 +3,11 @@ use chrono::{DateTime, Local};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub struct Proxy {
-    pub alive: bool,
-    pub history: ProxyHistory,
-    pub id: String,
-    pub all: Vec<String>,
+pub struct Group {
     pub name: String,
-    pub now: String,
     pub r#type: String,
-    pub udp: bool,
-}
-
-#[derive(Deserialize)]
-pub struct ProxyHistory {
-    pub time: String,
-    pub delay: i64,
+    pub now: String,
+    pub all: Vec<String>,
 }
 
 #[derive(Deserialize)]

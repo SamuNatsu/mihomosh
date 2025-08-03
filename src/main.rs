@@ -11,7 +11,7 @@ use clap::{CommandFactory, Parser};
 
 use crate::{
     arguments::Args,
-    commands::{config, connection, control, inspect, profile, rule, rule_set},
+    commands::{config, connection, control, inspect, profile, proxy, rule, rule_set},
 };
 
 #[tokio::main]
@@ -28,8 +28,7 @@ async fn run() -> Result<()> {
         Args::Connection(args) => connection::handle_connection(args).await?,
         Args::Inspect(args) => inspect::handle_inspect(args).await?,
         Args::Control(args) => control::handle_control(args).await?,
-        Args::Proxy(args) => todo!(),
-        Args::ProxySet(args) => todo!(),
+        Args::Proxy(args) => proxy::handle_proxy(args).await?,
         Args::Rule => rule::print_rule().await?,
         Args::RuleSet(args) => rule_set::handle_rule_set(args).await?,
         Args::ShellCompletion { shell } => {
