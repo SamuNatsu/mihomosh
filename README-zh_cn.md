@@ -58,7 +58,7 @@ $ curl https://i.jpillora.com/SamuNatsu/mihomosh@latest! | bash
 
 - Linux（i686、x86_64、arm64）
 - MacOS（x86_64、arm64）
-- Windows（i687、x86_64、arm64）
+- Windows（i686、x86_64、arm64）
 
 ### Cargo 编译安装
 
