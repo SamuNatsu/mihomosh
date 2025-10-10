@@ -83,23 +83,24 @@ async fn update(uuid_or_name: Option<String>) -> Result<()> {
 
     // Resolve tasks
     let res = set.join_all().await;
-    let mut meta_map = Meta::get_instance().lock().unwrap();
-    for (uuid, res) in res {
-        match res {
-            Ok(info) => {
-                let meta = meta_map.get_mut(&uuid).unwrap();
-                meta.used_bytes = info.used;
-                meta.total_bytes = info.total;
-                meta.expired_at = info.expired_at;
-                meta.updated_at = Some(Utc::now().timestamp());
-            }
-            Err(err) => {
-                println_danger!("{err:?}");
+    {
+        let mut meta_map = Meta::get_instance().lock().unwrap();
+        for (uuid, res) in res {
+            match res {
+                Ok(info) => {
+                    let meta = meta_map.get_mut(&uuid).unwrap();
+                    meta.used_bytes = info.used;
+                    meta.total_bytes = info.total;
+                    meta.expired_at = info.expired_at;
+                    meta.updated_at = Some(Utc::now().timestamp());
+                }
+                Err(err) => {
+                    println_danger!("{err:?}");
+                }
             }
         }
     }
 
-    drop(meta_map);
     Meta::flush().context("Fail to flush metadata")?;
 
     // Try reactivate
