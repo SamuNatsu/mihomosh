@@ -189,7 +189,7 @@ impl Profile {
         // Write data
         let data = serde_yml::to_string(&value).context("Fail to serialize configs")?;
         fs::write(&cfg.mihomo_path, &data)
-            .with_context(|| format!("Fail to write file `{}`", path.display()))?;
+            .with_context(|| format!("Fail to write file `{}`", &cfg.mihomo_path.display()))?;
 
         // Restart mihomo
         cfg.get_api()
