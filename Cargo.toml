@@ -1,6 +1,6 @@
 [package]
 name = "mihomosh"
-version = "2.0.1"
+version = "2.0.0"
 edition = "2024"
 
 [profile.release]
