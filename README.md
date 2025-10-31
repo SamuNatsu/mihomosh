@@ -36,8 +36,8 @@ Mihomosh allows almost all functions provided by the Mihomo external control API
 ## Prerequisites
 
 - **Must** have Mihomo installed on your machine and the external control API enabled.
-- (Optional) By default, `nano` is used as the file editor, but you can specify a different file editor via parameters.
-- (Optional) By default, `less` is used as the file browser, but you can specify a different file browser via parameters.
+- (Optional) By default, editor from environment variable `EDITOR` is used, if the variable not exists, `nano` is used instead. You still can specify a different file editor via parameters.
+- (Optional) By default, `less` is used as the file browser. You still can specify a different file browser via parameters.
 
 ## Installation
 
