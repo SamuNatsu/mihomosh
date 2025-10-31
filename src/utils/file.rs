@@ -80,16 +80,45 @@ where
 
     // Execute editor
     let path = temp_file.path();
-    let status = Command::new(editor.as_ref())
-        .arg(path)
-        .status()
-        .with_context(|| {
-            format!(
-                "Fail to execute program `{}` with argument `{}`",
-                editor.as_ref(),
-                path.display()
-            )
-        })?;
+    let run_editor = |editor_name: &str| {
+        Command::new(editor_name)
+            .arg(path)
+            .status()
+            .with_context(|| {
+                format!(
+                    "Fail to execute program `{}` with argument `{}`",
+                    editor_name,
+                    path.display()
+                )
+            })
+    };
+    const DEFAULT_EDITOR: &str = "nano";
+    // todo: If the cli input is nano (such as mihomosh config edit -e nano),
+    // the env EDITOR should not be used.
+    // This needs to check whether nano in the command line parameter is passed in by the user.
+    // Maybe we should change the command line parameter to Option type
+    let status = if editor.as_ref() != DEFAULT_EDITOR {
+        run_editor(editor.as_ref())?
+    } else {
+        match std::env::var("EDITOR") {
+            Ok(env_editor) => run_editor(&*env_editor).or_else(|err| {
+                if env_editor != DEFAULT_EDITOR {
+                    println_secondary!(
+                        "Environment editor `{}` exited with status {}, fail back to {}",
+                        env_editor,
+                        err,
+                        DEFAULT_EDITOR
+                    );
+                    run_editor(DEFAULT_EDITOR)
+                } else {
+                    Err(err)
+                }
+            })?,
+            // EDITOR environment variable not set, use DEFAULT_EDITOR
+            Err(_) => run_editor(DEFAULT_EDITOR)?,
+        }
+    };
+
     if !status.success() {
         bail!("Editor `{}` exited with status `{status}`", editor.as_ref());
     }
