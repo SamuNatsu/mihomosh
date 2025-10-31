@@ -17,8 +17,8 @@ pub enum ProfileArgs {
     /// Create a new profile
     Create {
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// Delete a profile
@@ -58,16 +58,16 @@ pub enum ProfileArgs {
     #[command(name = "egxc")]
     EditGlobalExtendConfig {
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// Edit global extend script
     #[command(name = "egxs")]
     EditGlobalExtendScript {
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 }
 
@@ -122,8 +122,8 @@ pub enum ProfileEditArgs {
         uuid_or_name: String,
 
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// Edit a profile's file data
@@ -132,8 +132,8 @@ pub enum ProfileEditArgs {
         uuid_or_name: String,
 
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// View a profile's extend configs
@@ -142,8 +142,8 @@ pub enum ProfileEditArgs {
         uuid_or_name: String,
 
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// View a profile's extend script
@@ -152,7 +152,7 @@ pub enum ProfileEditArgs {
         uuid_or_name: String,
 
         /// Editor to be used for creating
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 }

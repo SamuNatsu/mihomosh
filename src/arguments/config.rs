@@ -12,8 +12,8 @@ pub enum ConfigArgs {
     /// Edit configs
     Edit {
         /// Editor to be used for editing
-        #[arg(short, long, default_value = "nano")]
-        editor: String,
+        #[arg(short, long)]
+        editor: Option<String>,
     },
 
     /// Reset configs

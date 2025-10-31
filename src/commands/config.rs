@@ -34,13 +34,13 @@ fn view(viewer: String) -> Result<()> {
     Ok(())
 }
 
-async fn edit(editor: String) -> Result<()> {
+async fn edit(editor: Option<String>) -> Result<()> {
     // Edit configs
     let path = Config::get_path();
     let contents = fs::read_to_string(path)
         .with_context(|| format!("Fail to read file `{}`", path.display()))?;
-    let contents = file::edit_temp_file(".yaml", &editor, &contents)
-        .with_context(|| format!("Fail to edit temporary file with editor `{editor}`"))?;
+    let contents =
+        file::edit_temp_file(".yaml", editor, &contents).context("Fail to edit temporary file")?;
 
     // Verify configs
     let value = serde_yml::from_str::<Config>(&contents).context("Fail to parse configs")?;

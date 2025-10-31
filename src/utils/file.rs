@@ -1,4 +1,5 @@
 use std::{
+    env,
     fs::{self, File},
     io::{self, Write},
     path::Path,
@@ -10,7 +11,11 @@ use tempfile::NamedTempFile;
 
 use crate::{println_secondary, utils::prompt};
 
-pub fn edit_file<P, S1, S2>(path: P, editor: S1, default_contents: Option<S2>) -> Result<bool>
+pub fn edit_file<P, S1, S2>(
+    path: P,
+    editor: Option<S1>,
+    default_contents: Option<S2>,
+) -> Result<bool>
 where
     P: AsRef<Path>,
     S1: AsRef<str>,
@@ -37,12 +42,8 @@ where
     // Edit through temporary file
     let contents = fs::read_to_string(&path)
         .with_context(|| format!("Fail to read file `{}`", path.as_ref().display()))?;
-    let contents = edit_temp_file(&suffix, &editor, &contents).with_context(|| {
-        format!(
-            "Fail to edit temporary file with editor `{}`",
-            editor.as_ref()
-        )
-    })?;
+    let contents = edit_temp_file(&suffix, editor, &contents)
+        .with_context(|| format!("Fail to edit temporary"))?;
 
     // Confirm to save
     let input = prompt::confirm("Are you sure to save the changes?")
@@ -58,7 +59,11 @@ where
     Ok(true)
 }
 
-pub fn edit_temp_file<S1, S2, S3>(suffix: S1, editor: S2, default_contents: S3) -> Result<String>
+pub fn edit_temp_file<S1, S2, S3>(
+    suffix: S1,
+    editor: Option<S2>,
+    default_contents: S3,
+) -> Result<String>
 where
     S1: AsRef<str>,
     S2: AsRef<str>,
@@ -78,20 +83,21 @@ where
         .flush()
         .with_context(|| format!("Fail to flush file `{}`", temp_file.path().display()))?;
 
+    // Get editor
+    let editor = editor.map_or(env::var("EDITOR").unwrap_or("nano".to_owned()), |s| {
+        s.as_ref().to_owned()
+    });
+
     // Execute editor
     let path = temp_file.path();
-    let status = Command::new(editor.as_ref())
-        .arg(path)
-        .status()
-        .with_context(|| {
-            format!(
-                "Fail to execute program `{}` with argument `{}`",
-                editor.as_ref(),
-                path.display()
-            )
-        })?;
+    let status = Command::new(&editor).arg(path).status().with_context(|| {
+        format!(
+            "Fail to execute program `{editor}` with argument `{}`",
+            path.display()
+        )
+    })?;
     if !status.success() {
-        bail!("Editor `{}` exited with status `{status}`", editor.as_ref());
+        bail!("Editor `{editor}` exited with status `{status}`");
     }
 
     // Return file contents

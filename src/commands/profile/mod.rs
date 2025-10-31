@@ -150,16 +150,16 @@ pub async fn activate(uuid_or_name: Option<String>) -> Result<()> {
     Ok(())
 }
 
-fn create(editor: String) -> Result<()> {
+fn create(editor: Option<String>) -> Result<()> {
     let mut meta_map = Meta::get_instance().lock().unwrap();
 
     // Edit temporary file
     let contents = file::edit_temp_file(
         ".yaml",
-        &editor,
+        editor,
         DEFAULT_PROFILE_TEMPLATE.replace("<CARGO_PKG_VERSION>", env!("CARGO_PKG_VERSION")),
     )
-    .with_context(|| format!("Fail to edit temporary YAML file with editor `{editor}`"))?;
+    .context("Fail to edit temporary file")?;
 
     let profile = serde_yml::from_str::<Profile>(&contents).context("Fail to parse profile")?;
     profile.verify().context("Fail to verify profile")?;

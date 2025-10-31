@@ -35,15 +35,15 @@ pub fn handle_edit(args: ProfileEditArgs) -> Result<()> {
     Ok(())
 }
 
-fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_info(uuid_or_name: String, editor: Option<String>) -> Result<()> {
     // Edit profile
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let path = Profile::get_path(&uuid);
     let contents = fs::read_to_string(&path)
         .with_context(|| format!("Fail to read file `{}`", path.display()))?;
-    let contents = file::edit_temp_file(".yaml", &editor, &contents)
-        .with_context(|| format!("Fail to edit temporary file with editor `{editor}`"))?;
+    let contents =
+        file::edit_temp_file(".yaml", editor, &contents).context("Fail to edit temporary file")?;
 
     // Verify profile
     let profile = serde_yml::from_str::<Profile>(&contents).context("Fail to parse profile")?;
@@ -82,7 +82,7 @@ fn edit_info(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_file(uuid_or_name: String, editor: Option<String>) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()
@@ -93,7 +93,7 @@ fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
         .name
         .clone();
     let path = Profile::get_data_path(&uuid);
-    let saved = file::edit_file(&path, &editor, Some(""))
+    let saved = file::edit_file(&path, editor, Some(""))
         .with_context(|| format!("Fail to edit file `{}`", path.display()))?;
     if saved {
         println_success!("Profile `{name}` with UUID `{uuid}` file data saved");
@@ -102,7 +102,7 @@ fn edit_file(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_ext_conf(uuid_or_name: String, editor: Option<String>) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()
@@ -113,7 +113,7 @@ fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
         .name
         .clone();
     let path = Profile::get_ext_conf_path(&uuid);
-    let saved = file::edit_file(&path, &editor, Some(DEFAULT_EXTEND_CONFIG_TEMPLATE))
+    let saved = file::edit_file(&path, editor, Some(DEFAULT_EXTEND_CONFIG_TEMPLATE))
         .with_context(|| format!("Fail to edit file `{}`", path.display()))?;
     if saved {
         println_success!("Profile `{name}` with UUID `{uuid}` extend config saved");
@@ -122,7 +122,7 @@ fn edit_ext_conf(uuid_or_name: String, editor: String) -> Result<()> {
     Ok(())
 }
 
-fn edit_ext_script(uuid_or_name: String, editor: String) -> Result<()> {
+fn edit_ext_script(uuid_or_name: String, editor: Option<String>) -> Result<()> {
     let uuid = Meta::find_uuid_or_name(&uuid_or_name)
         .with_context(|| format!("Fail to find UUID or name `{uuid_or_name}`"))?;
     let name = Meta::get_instance()
@@ -133,7 +133,7 @@ fn edit_ext_script(uuid_or_name: String, editor: String) -> Result<()> {
         .name
         .clone();
     let path = Profile::get_ext_script_path(&uuid);
-    let saved = file::edit_file(&path, &editor, Some(DEFAULT_EXTEND_SCRIPT_TEMPLATE))
+    let saved = file::edit_file(&path, editor, Some(DEFAULT_EXTEND_SCRIPT_TEMPLATE))
         .with_context(|| format!("Fail to edit file `{}`", path.display()))?;
     if saved {
         println_success!("Profile `{name}` with UUID `{uuid}` extend script saved");

@@ -36,9 +36,9 @@ pub fn view_ext_script(viewer: String) -> Result<()> {
     Ok(())
 }
 
-pub async fn edit_ext_conf(editor: String) -> Result<()> {
+pub async fn edit_ext_conf(editor: Option<String>) -> Result<()> {
     let path = dir::get_data_dir().join("extend.yaml");
-    let saved = file::edit_file(&path, &editor, Some(DEFAULT_EXTEND_CONFIG_TEMPLATE))
+    let saved = file::edit_file(&path, editor, Some(DEFAULT_EXTEND_CONFIG_TEMPLATE))
         .with_context(|| format!("Fail to edit file `{}`", path.display()))?;
     if saved {
         println_success!("Global extend config saved");
@@ -54,9 +54,9 @@ pub async fn edit_ext_conf(editor: String) -> Result<()> {
     Ok(())
 }
 
-pub async fn edit_ext_script(editor: String) -> Result<()> {
+pub async fn edit_ext_script(editor: Option<String>) -> Result<()> {
     let path = dir::get_data_dir().join("extend.js");
-    let saved = file::edit_file(&path, &editor, Some(DEFAULT_EXTEND_SCRIPT_TEMPLATE))
+    let saved = file::edit_file(&path, editor, Some(DEFAULT_EXTEND_SCRIPT_TEMPLATE))
         .with_context(|| format!("Fail to edit file `{}`", path.display()))?;
     if saved {
         println_success!("Global extend scripts saved");
