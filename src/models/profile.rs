@@ -120,7 +120,7 @@ impl Profile {
 
         // Merge mihomosh configs
         let tmp = format!(
-            "mode: {}\nallow-lan: {}\nipv6: {}\nunified-delay: {}\nport: {}\nsocks-port: {}\nmixed-port: {}\nlog-level: {}\nredir-port: 0\ntproxy-port: 0\n",
+            "mode: {}\nallow-lan: {}\nipv6: {}\nunified-delay: {}\nport: {}\nsocks-port: {}\nmixed-port: {}\nlog-level: {}\nredir-port: 0\ntproxy-port: 0\nsecret: {}\n",
             cfg.mode.as_str(),
             cfg.allow_lan,
             cfg.allow_ipv6,
@@ -128,7 +128,8 @@ impl Profile {
             cfg.port.unwrap_or_default(),
             cfg.socks_port.unwrap_or_default(),
             cfg.mixed_port.unwrap_or_default(),
-            cfg.log_level.as_str()
+            cfg.log_level.as_str(),
+            cfg.mihomo_secret.as_deref().unwrap_or_default()
         );
         let tmp = serde_yml::from_str::<Value>(&tmp).context("Fail to parse prepared configs")?;
         merge_yaml(&tmp, &mut value);
