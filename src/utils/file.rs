@@ -11,6 +11,8 @@ use tempfile::NamedTempFile;
 
 use crate::{println_secondary, utils::prompt};
 
+const DEFAULT_EDITOR: &str = if cfg!(windows) { "edit" } else { "nano" };
+
 pub fn edit_file<P, S1, S2>(
     path: P,
     editor: Option<S1>,
@@ -84,7 +86,7 @@ where
         .with_context(|| format!("Fail to flush file `{}`", temp_file.path().display()))?;
 
     // Get editor
-    let editor = editor.map_or(env::var("EDITOR").unwrap_or("nano".to_owned()), |s| {
+    let editor = editor.map_or(env::var("EDITOR").unwrap_or(DEFAULT_EDITOR.to_owned()), |s| {
         s.as_ref().to_owned()
     });
 
