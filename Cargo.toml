@@ -1,0 +1,18 @@
+[package]
+name = "mihomosh"
+version = "3.0.0"
+edition = "2024"
+description = "A command line toolkit for Mihomo"
+repository = "https://github.com/SamuNatsu/mihomosh"
+license = "GPL-3.0-or-later"
+publish = false
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1
+
+[dependencies]
+clap = { version = "4.6.1", features = ["derive"] }
+clap_complete = "4.6.3"
