@@ -56,3 +56,64 @@ pub enum ProfileUpdateProxy {
 pub struct UrlString(pub Url);
 
 impl ActiveModelBehavior for ActiveModel {}
+
+#[cfg(test)]
+mod tests {
+    use sea_orm::{Database, IntoActiveModel};
+
+    use super::*;
+
+    #[test]
+    fn deser() {
+        serde_json::from_str::<ModelEx>(
+            r#"{
+            "name": "Test",
+            "type": "remote",
+            "url": "http://127.0.0.1:9090",
+            "user_agent": "mihomosh (clash-verge)",
+            "update_proxy": "none",
+            "allow_invalid_certs": false
+        }"#,
+        )
+        .expect("fail to deserialize");
+    }
+
+    #[tokio::test]
+    async fn db() {
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("fail to create memory database");
+
+        db.get_schema_builder()
+            .register(Entity)
+            .apply(&db)
+            .await
+            .expect("fail to register schema");
+
+        let profile = serde_json::from_str::<ModelEx>(
+            r#"{
+                "uuid": "ignored",
+                "name": "Test",
+                "type": "remote",
+                "url": "http://127.0.0.1:9090",
+                "user_agent": "mihomosh (clash-verge)",
+                "update_proxy": "none",
+                "allow_invalid_certs": false,
+                "updated_at": "ignored",
+                "expired_at": "ignored",
+                "used_bytes": "ignored",
+                "total_bytes": "ignored"
+            }"#,
+        )
+        .expect("fail to deserialize")
+        .into_active_model()
+        .set_uuid("abcdABCD")
+        .insert(&db)
+        .await
+        .expect("fail to insert");
+        println!("{profile:?}");
+
+        let profile = Entity::find().one(&db).await.expect("fail to find");
+        println!("{profile:?}")
+    }
+}
