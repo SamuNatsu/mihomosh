@@ -2,22 +2,31 @@ use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use eyre::{Context, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use smart_default::SmartDefault;
 use strum::AsRefStr;
+use tinytemplate::TinyTemplate;
 use url::Url;
+use validator::Validate;
 
-use crate::utils::dir;
+use crate::{templates, utils::dir};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, SmartDefault, Validate)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
+    #[default = "/etc/mihomo/config.yaml"]
     pub mihomo_path: PathBuf,
+    #[default(Url::parse("http://127.0.0.1:9090").unwrap())]
     pub mihomo_api: Url,
     pub mihomo_secret: Option<String>,
     pub mode: ConfigMode,
     pub allow_lan: bool,
     pub allow_ipv6: bool,
+    #[default = true]
     pub unified_delay: bool,
     pub log_level: ConfigLogLevel,
+    #[default = 7890]
+    #[validate(range(min = 1))]
     pub port: u16,
 }
 
@@ -41,22 +50,6 @@ pub enum ConfigLogLevel {
     #[default]
     Info,
     Debug,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            mihomo_path: PathBuf::from("/etc/mihomo/config.yaml"),
-            mihomo_api: Url::parse("http://127.0.0.1:9090").unwrap(),
-            mihomo_secret: None,
-            mode: ConfigMode::default(),
-            allow_lan: false,
-            allow_ipv6: false,
-            unified_delay: true,
-            log_level: ConfigLogLevel::default(),
-            port: 7890,
-        }
-    }
 }
 
 impl Config {
@@ -83,7 +76,7 @@ impl Config {
         static INSTANCE: OnceLock<Config> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             let path = Self::get_path();
-            let file = File::open(&path)
+            let file = File::open(path)
                 .wrap_err_with(|| format!("fail to open file `{}`", path.display()))
                 .expect("configuration file should be readable");
 
@@ -95,10 +88,26 @@ impl Config {
 
     pub fn reset() -> Result<()> {
         let path = Self::get_path();
-        let file = File::create(&path)
+        let file = File::create(path)
             .wrap_err_with(|| format!("fail to create file `{}`", path.display()))?;
 
-        Ok(serde_json::to_writer(&file, &Self::default())
-            .wrap_err_with(|| format!("fail to serialize value to file `{}`", path.display()))?)
+        serde_json::to_writer(&file, &Self::default())
+            .wrap_err_with(|| format!("fail to serialize value to file `{}`", path.display()))
+    }
+
+    pub fn render(&self) -> Result<String> {
+        let mut tt = TinyTemplate::new();
+        tt.add_template("config", templates::CONFIG)
+            .wrap_err("fail to add rendering template")?;
+        tt.set_default_formatter(&|value, output| {
+            if let Value::String(str) = &value {
+                output.push_str(&serde_json::to_string(str)?);
+                Ok(())
+            } else {
+                tinytemplate::format(value, output)
+            }
+        });
+
+        Ok(tt.render("config", self)?)
     }
 }

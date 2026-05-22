@@ -1,11 +1,37 @@
 mod cli;
+mod handlers;
 mod models;
+mod templates;
 mod utils;
 
-use clap::Parser;
+use std::io;
 
-use crate::cli::Cli;
+use clap::{CommandFactory, Parser};
+use eyre::Result;
 
-fn main() {
-    let _ = Cli::parse();
+use crate::{cli::Cli, handlers::config};
+
+fn main() -> Result<()> {
+    // Install panic hook
+    color_eyre::install()?;
+
+    // Handle commands
+    match Cli::parse() {
+        Cli::Tui { .. } => todo!(),
+        Cli::Config(cmd) => config::handle(cmd)?,
+        Cli::Profile(_) => todo!(),
+        Cli::Proxy(_) => todo!(),
+        Cli::Rule(_) => todo!(),
+        Cli::Connection(_) => todo!(),
+        Cli::Kernel(_) => todo!(),
+        Cli::Completion { shell } => {
+            let mut cmd = Cli::command();
+            let bin_name = cmd.get_name().to_owned();
+
+            clap_complete::generate(shell, &mut cmd, bin_name, &mut io::stdout());
+        }
+    }
+
+    // Done
+    Ok(())
 }

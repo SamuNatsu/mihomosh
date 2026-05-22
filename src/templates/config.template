@@ -1,0 +1,44 @@
+## Mihomosh Configuration
+
+## Mihomo Configuration File Path
+# Type: String
+# Example: "/etc/mihomo/config.yaml"
+mihomo-path: { mihomo-path }
+
+## Mihomo RESTful API URL
+# Type: String
+# Example: "http://127.0.0.1:9090"
+mihomo-api: { mihomo-api }
+
+## Mihomo RESTful API Secret (Optional)
+# Type: String
+# Example: "your-secret"
+{{ if mihomo-secret -}}
+mihomo-secret: { mihomo-secret }
+{{- else -}}
+#mihomo-secret: "your-secret"
+{{- endif }}
+
+## Proxy Mode
+# Type: String enumerate ("rule" | "global" | "direct")
+mode: { mode }
+
+## Allow LAN
+# Type: Boolean
+allow-lan: { allow-lan }
+
+## Allow IPv6
+# Type: Boolean
+allow-ipv6: { allow-ipv6 }
+
+## Unified Delay
+# Type: Boolean
+unified-delay: { unified-delay }
+
+## Log Level
+# Type: String enumerate ("silent" | "error" | "warning" | "info" | "debug")
+log-level: { log-level }
+
+## Mixed Port
+# Type: uint16
+port: { port }
