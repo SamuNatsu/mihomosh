@@ -1,4 +1,4 @@
-use std::{fs::File, path::PathBuf, sync::OnceLock};
+use std::{fs::File, path::PathBuf, sync::LazyLock};
 
 use eyre::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ use tinytemplate::TinyTemplate;
 use url::Url;
 use validator::Validate;
 
-use crate::{templates, utils::dir};
+use crate::templates;
 
 #[derive(Deserialize, Serialize, SmartDefault, Validate)]
 #[serde(rename_all = "kebab-case")]
@@ -54,48 +54,60 @@ pub enum ConfigLogLevel {
 
 impl Config {
     pub fn get_path() -> &'static PathBuf {
-        static INSTANCE: OnceLock<PathBuf> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            let path = dir::get_data_dir().join("config.json");
+        static INSTANCE: LazyLock<PathBuf> = LazyLock::new(|| {
+            // Get configuration file path
+            let path = super::DATA_LOCAL_DIR.join("config.json");
+
+            // Create default configuration file if not exists
             if !path.is_file() {
+                // Create empty file
                 let file = File::create(&path)
                     .wrap_err_with(|| format!("fail to create file `{}`", path.display()))
                     .expect("configuration file should be writable");
-                serde_json::to_writer(&file, &Self::default())
+
+                // Write default configurations
+                serde_json::to_writer(&file, &Config::default())
                     .wrap_err_with(|| {
                         format!("fail to serialize value to file `{}`", path.display())
                     })
                     .expect("default configuration serialization should be successful");
             }
 
+            // Return path
             path
-        })
+        });
+        &INSTANCE
     }
 
     pub fn get_instance() -> &'static Self {
-        static INSTANCE: OnceLock<Config> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            let path = Self::get_path();
+        pub static INSTANCE: LazyLock<Config> = LazyLock::new(|| {
+            // Open configuration file
+            let path = Config::get_path();
             let file = File::open(path)
                 .wrap_err_with(|| format!("fail to open file `{}`", path.display()))
                 .expect("configuration file should be readable");
 
+            // Parse configurations
             serde_json::from_reader(&file)
                 .wrap_err_with(|| format!("fail to parse file `{}`", path.display()))
                 .expect("configuration file should be valid")
-        })
+        });
+        &INSTANCE
     }
 
     pub fn reset() -> Result<()> {
+        // Create empty file
         let path = Self::get_path();
         let file = File::create(path)
             .wrap_err_with(|| format!("fail to create file `{}`", path.display()))?;
 
+        // Write default configurations
         serde_json::to_writer(&file, &Self::default())
             .wrap_err_with(|| format!("fail to serialize value to file `{}`", path.display()))
     }
 
     pub fn render(&self) -> Result<String> {
+        // Setup template engine
         let mut tt = TinyTemplate::new();
         tt.add_template("config", templates::CONFIG)
             .wrap_err("fail to add rendering template")?;
@@ -108,6 +120,7 @@ impl Config {
             }
         });
 
+        // Render configurations
         Ok(tt.render("config", self)?)
     }
 }
