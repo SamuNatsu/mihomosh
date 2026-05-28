@@ -44,8 +44,7 @@ where
     // Edit through temporary file
     let contents = fs::read_to_string(&path)
         .with_context(|| format!("Fail to read file `{}`", path.as_ref().display()))?;
-    let contents = edit_temp_file(&suffix, editor, &contents)
-        .with_context(|| format!("Fail to edit temporary"))?;
+    let contents = edit_temp_file(&suffix, editor, &contents).context("Fail to edit temporary")?;
 
     // Confirm to save
     let input = prompt::confirm("Are you sure to save the changes?")
@@ -86,9 +85,10 @@ where
         .with_context(|| format!("Fail to flush file `{}`", temp_file.path().display()))?;
 
     // Get editor
-    let editor = editor.map_or(env::var("EDITOR").unwrap_or(DEFAULT_EDITOR.to_owned()), |s| {
-        s.as_ref().to_owned()
-    });
+    let editor = editor.map_or(
+        env::var("EDITOR").unwrap_or(DEFAULT_EDITOR.to_owned()),
+        |s| s.as_ref().to_owned(),
+    );
 
     // Execute editor
     let path = temp_file.path();

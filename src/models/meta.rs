@@ -168,9 +168,10 @@ impl Meta {
             return console::style("N/A".to_owned()).bright().black();
         }
 
-        if self.used_bytes.is_some() && self.total_bytes.is_some() {
-            let percent =
-                self.used_bytes.unwrap() as f64 / self.total_bytes.unwrap() as f64 * 100.0;
+        if let Some(used) = self.used_bytes
+            && let Some(total) = self.total_bytes
+        {
+            let percent = used as f64 / total as f64 * 100.0;
             let percent = if percent < 70.0 {
                 style_fmt!("({:.1}%)", percent).green()
             } else if percent < 90.0 {
