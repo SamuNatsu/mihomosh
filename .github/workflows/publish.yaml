@@ -16,7 +16,6 @@ jobs:
     name: Release - ${{ matrix.os-name }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
-      fail-fast: false
       matrix:
         include:
           # Linux
@@ -39,17 +38,17 @@ jobs:
           - os-name: Windows-i686
             runs-on: windows-latest
             target: i686-pc-windows-msvc
-            exe_suffix: ""
+            exe_suffix: ".exe"
 
           - os-name: Windows-x86_64
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
-            exe_suffix: ""
+            exe_suffix: ".exe"
 
           - os-name: Windows-aarch64
             runs-on: windows-latest
             target: aarch64-pc-windows-msvc
-            exe_suffix: ""
+            exe_suffix: ".exe"
             skip-upx: true # Waiting for support: https://github.com/upx/upx/issues/650
 
           # macOS
