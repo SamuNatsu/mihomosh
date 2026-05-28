@@ -25,36 +25,44 @@ jobs:
           - os-name: Linux-i686
             runs-on: ubuntu-latest
             target: i686-unknown-linux-musl
+            exe_suffix: ""
 
           - os-name: Linux-x86_64
             runs-on: ubuntu-latest
             target: x86_64-unknown-linux-musl
+            exe_suffix: ""
 
           - os-name: Linux-aarch64
             runs-on: ubuntu-latest
             target: aarch64-unknown-linux-musl
+            exe_suffix: ""
 
           # Windows
           - os-name: Windows-i686
             runs-on: windows-latest
             target: i686-pc-windows-msvc
+            exe_suffix: ".exe"
 
           - os-name: Windows-x86_64
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
+            exe_suffix: ".exe"
 
           - os-name: Windows-aarch64
             runs-on: windows-latest
             target: aarch64-pc-windows-msvc
+            exe_suffix: ".exe"
 
           # macOS
           - os-name: macOS-x86_64
             runs-on: macOS-latest
             target: x86_64-apple-darwin
+            exe_suffix: ""
 
           - os-name: macOS-aarch64
             runs-on: macOS-latest
             target: aarch64-apple-darwin
+            exe_suffix: ""
 
     steps:
       - name: Checkout repository
@@ -66,9 +74,21 @@ jobs:
           target: ${{ matrix.target }}
           args: "--locked"
 
-      - name: Upload artifacts
-        uses: houseabsolute/actions-rust-release@v0
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          mkdir -p artifacts
+
+          BIN_PATH="target/${{ matrix.target }}/debug/mihomosh${{ matrix.exe_suffix }}"
+          ARTIFACT_NAME="mihomosh-${{ matrix.os-name }}${{ matrix.exe_suffix }}"
+
+          cp "$BIN_PATH" "artifacts/$ARTIFACT_NAME"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v7
         with:
-          executable-name: mihomosh
-          target: ${{ matrix.target }}
-          changes-file: ""
+          name: mihomosh-${{ matrix.os-name }}
+          path: artifacts/*
+          if-no-files-found: error
