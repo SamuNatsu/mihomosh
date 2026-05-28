@@ -1,0 +1,109 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release - ${{ matrix.os-name }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - os-name: Linux-i686
+            runs-on: ubuntu-latest
+            target: i686-unknown-linux-musl
+            exe_suffix: ""
+
+          - os-name: Linux-x86_64
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            exe_suffix: ""
+
+          - os-name: Linux-aarch64
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            exe_suffix: ""
+
+          # Windows
+          - os-name: Windows-i686
+            runs-on: windows-latest
+            target: i686-pc-windows-msvc
+            exe_suffix: ""
+
+          - os-name: Windows-x86_64
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+            exe_suffix: ""
+
+          - os-name: Windows-aarch64
+            runs-on: windows-latest
+            target: aarch64-pc-windows-msvc
+            exe_suffix: ""
+            skip-upx: true # Waiting for support: https://github.com/upx/upx/issues/650
+
+          # macOS
+          - os-name: macOS-x86_64
+            runs-on: macOS-latest
+            target: x86_64-apple-darwin
+            exe_suffix: ""
+            skip-upx: true # Waiting for support: https://github.com/upx/upx/issues/612
+
+          - os-name: macOS-aarch64
+            runs-on: macOS-latest
+            target: aarch64-apple-darwin
+            exe_suffix: ""
+            skip-upx: true # Waiting for support: https://github.com/upx/upx/issues/612
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          target: ${{ matrix.target }}
+          args: "--locked --release"
+
+      - name: Setup UPX for Linux
+        if: ${{ matrix.runs-on == 'ubuntu-latest' }}
+        run: sudo apt install -y upx
+
+      - name: Setup UPX for Windows
+        if: ${{ matrix.runs-on == 'windows-latest' }}
+        run: choco install upx -y
+
+      ### Waiting for support: https://github.com/upx/upx/issues/612
+      # - name: Setup UPX for MacOS
+      #   if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
+      #   run: brew install upx
+
+      - name: Compress binary
+        if: ${{ !matrix.skip-upx }}
+        run: upx --best --lzma -q target/${{ matrix.target }}/release/mihomosh${{ matrix.exe_suffix }}
+
+      - name: Extract changes for Linux and Windows
+        if: ${{ matrix.runs-on != 'macOS-latest' }}
+        run: git log -1 --pretty=format:%b | sed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
+
+      - name: Extract changes for MacOS
+        if: ${{ matrix.runs-on == 'macOS-latest' }}
+        run: |
+          brew install gnu-sed
+          git log -1 --pretty=format:%b | gsed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
+
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: mihomosh
+          target: ${{ matrix.target }}
