@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    tags-ignore: ["*"]
+    tags-ignore: ["**"]
     paths:
       - .github/workflows/ci.yaml
       - src/**
