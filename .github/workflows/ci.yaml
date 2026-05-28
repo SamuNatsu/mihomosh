@@ -1,20 +1,26 @@
 name: CI
+
 on:
   push:
+    tags-ignore: ["*"]
     paths:
-      - .github/workflows/**
+      - .github/workflows/ci.yaml
       - src/**
       - Cargo.*
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  release:
+  build:
+    name: Build - ${{ matrix.os-name }}
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
-        platform:
+        include:
+          # Linux
           - os-name: Linux-i686
             runs-on: ubuntu-latest
             target: i686-unknown-linux-musl
@@ -27,6 +33,7 @@ jobs:
             runs-on: ubuntu-latest
             target: aarch64-unknown-linux-musl
 
+          # Windows
           - os-name: Windows-i686
             runs-on: windows-latest
             target: i686-pc-windows-msvc
@@ -38,8 +45,8 @@ jobs:
           - os-name: Windows-aarch64
             runs-on: windows-latest
             target: aarch64-pc-windows-msvc
-            skip-upx: true # Waiting for support: https://github.com/upx/upx/issues/650
 
+          # macOS
           - os-name: macOS-x86_64
             runs-on: macOS-latest
             target: x86_64-apple-darwin
@@ -48,59 +55,12 @@ jobs:
             runs-on: macOS-latest
             target: aarch64-apple-darwin
 
-    name: Release - ${{ matrix.platform.os-name }}
-    runs-on: ${{ matrix.platform.runs-on }}
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Build binary
+      - name: Build
         uses: houseabsolute/actions-rust-cross@v1
         with:
-          target: ${{ matrix.platform.target }}
-          args: "--locked --release"
-          strip: false
-
-      - name: Setup UPX for Linux
-        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' }}
-        run: sudo apt install -y upx
-
-      - name: Setup UPX for Windows
-        if: ${{ matrix.platform.runs-on == 'windows-latest' }}
-        run: choco install upx -y
-
-      ### Waiting for support: https://github.com/upx/upx/issues/612
-      # - name: Setup UPX for MacOS
-      #   if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
-      #   run: brew install upx
-
-      - name: Compress binary for Linux
-        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' && !matrix.platform.skip-upx }}
-        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
-
-      - name: Compress binary for Windows
-        if: ${{ matrix.platform.runs-on == 'windows-latest' && !matrix.platform.skip-upx }}
-        run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh.exe
-
-      ### Waiting for support: https://github.com/upx/upx/issues/612
-      # - name: Compress binary for MacOS
-      #   if: ${{ matrix.platform.runs-on == 'macOS-latest' && !matrix.platform.skip-upx }}
-      #   run: upx --best --lzma -q target/${{ matrix.platform.target }}/release/mihomosh
-
-      - name: Extract changes for non-MacOS
-        if: ${{ matrix.platform.runs-on == 'ubuntu-latest' || matrix.platform.runs-on == 'windows-latest' }}
-        run: git log -1 --pretty=format:%b | sed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
-
-      - name: Extract changes for MacOS
-        if: ${{ matrix.platform.runs-on == 'macOS-latest' }}
-        run: |
-          brew install gnu-sed
-          git log -1 --pretty=format:%b | gsed -z 's/^[[:space:]]*//; s/[[:space:]]*$//' > Changes.md
-
-      - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0
-        with:
-          executable-name: mihomosh
-          target: ${{ matrix.platform.target }}
+          target: ${{ matrix.target }}
+          args: "--locked"
