@@ -1,0 +1,21 @@
+# Maintainer: k88936 email: kvtodev@outlook.com
+
+pkgname=mihomosh-bin
+pkgver=0.0.0
+pkgrel=1
+pkgdesc="A CLI Toolkit for Mihomo (prebuilt binary)"
+arch=('x86_64')
+url="https://github.com/SamuNatsu/mihomosh"
+license=('GPL3')
+provides=('mihomosh')
+conflicts=('mihomosh')
+source=(
+  "${pkgname}-${pkgver}.tar.gz::https://github.com/SamuNatsu/mihomosh/releases/download/v${pkgver}/mihomosh-Linux-musl-x86_64.tar.gz"
+  "LICENSE::https://raw.githubusercontent.com/SamuNatsu/mihomosh/v${pkgver}/LICENSE"
+)
+sha256sums=('SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/mihomosh" "${pkgdir}/usr/bin/mihomosh"
+  install -Dm644 "${srcdir}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

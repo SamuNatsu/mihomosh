@@ -1,0 +1,67 @@
+name: AUR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: aur-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish - ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [mihomosh, mihomosh-bin]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set version
+        env:
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: echo "PKGVER=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Update PKGBUILD and .SRCINFO
+        uses: heyhusen/archlinux-package-action@v3.0.0
+        with:
+          path: aur/${{ matrix.package }}
+          pkgver: ${{ env.PKGVER }}
+          updpkgsums: true
+          srcinfo: true
+          namcap: false
+          flags: ''
+
+      - name: Configure SSH for AUR
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
+      - name: Publish to AUR
+        env:
+          AUR_REPO: ssh://aur@aur.archlinux.org/${{ matrix.package }}.git
+        run: |
+          set -euo pipefail
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur -o IdentitiesOnly=yes"
+
+          tmpdir="$(mktemp -d)"
+          git clone "$AUR_REPO" "$tmpdir"
+          cp "aur/${{ matrix.package }}/PKGBUILD" "$tmpdir/PKGBUILD"
+          cp "aur/${{ matrix.package }}/.SRCINFO" "$tmpdir/.SRCINFO"
+
+          cd "$tmpdir"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add PKGBUILD .SRCINFO
+            git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -m "Update to v${PKGVER}"
+            git push
+          else
+            echo "No changes to publish."
+          fi
