@@ -7,7 +7,6 @@ pkgdesc="A CLI Toolkit for Mihomo"
 arch=('x86_64')
 url="https://github.com/SamuNatsu/mihomosh"
 license=('GPL3')
-depends=('openssl')
 options=(!lto)
 makedepends=('cargo' 'rust' 'base-devel' 'pkg-config')
 source=("git+https://github.com/SamuNatsu/mihomosh.git#tag=v${pkgver}")
