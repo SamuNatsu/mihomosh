@@ -13,6 +13,7 @@ source=(
   "${pkgname}-${pkgver}.tar.gz::https://github.com/SamuNatsu/mihomosh/releases/download/v${pkgver}/mihomosh-Linux-musl-x86_64.tar.gz"
   "LICENSE::https://raw.githubusercontent.com/SamuNatsu/mihomosh/v${pkgver}/LICENSE"
 )
+# CI workflow's updpkgsums: true does it automatically.
 sha256sums=('SKIP' 'SKIP')
 
 package() {
