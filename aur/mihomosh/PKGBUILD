@@ -8,6 +8,8 @@ arch=('x86_64')
 url="https://github.com/SamuNatsu/mihomosh"
 license=('GPL3')
 options=(!lto)
+provides=('mihomosh')
+conflicts=('mihomosh-bin')
 makedepends=('cargo' 'rust' 'base-devel' 'pkg-config')
 source=("git+https://github.com/SamuNatsu/mihomosh.git#tag=v${pkgver}")
 sha256sums=('SKIP')
