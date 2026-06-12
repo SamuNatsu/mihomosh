@@ -74,44 +74,44 @@ pub enum ProfileCommand {
     Extension(ProfileExtensionCommand),
 }
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 #[group(required = true, multiple = false)]
 pub struct ProfileTarget {
     /// Profile UUID
     #[arg(short, long)]
-    uuid: Option<String>,
+    pub uuid: Option<String>,
 
     /// Profile name
     #[arg(short, long)]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 #[group(required = false, multiple = false)]
 pub struct ProfileOptionalTarget {
     /// Profile UUID
     #[arg(short, long)]
-    uuid: Option<String>,
+    pub uuid: Option<String>,
 
     /// Profile name
     #[arg(short, long)]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
-#[derive(Args)]
+#[derive(Args, Clone)]
 #[group(required = true, multiple = false)]
 pub struct ProfileGlobalTarget {
     /// Profile UUID
     #[arg(short, long)]
-    uuid: Option<String>,
+    pub uuid: Option<String>,
 
     /// Profile name
     #[arg(short, long)]
-    name: Option<String>,
+    pub name: Option<String>,
 
     /// Global
     #[arg(short, long)]
-    global: bool,
+    pub global: bool,
 }
 
 #[derive(Subcommand)]
