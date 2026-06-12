@@ -3,7 +3,6 @@ use std::io::{self, Write};
 use eyre::{Context, Result};
 use owo_colors::OwoColorize;
 
-#[inline]
 pub fn alert<S: AsRef<str>>(msg: S) {
     println!("{}", format!("# {}", msg.as_ref()).bold().bright_red());
 }
@@ -32,7 +31,7 @@ pub fn confirm<S: AsRef<str>>(msg: S, default: bool) -> Result<bool> {
     // Check loop
     loop {
         let input = prompt(&msg)
-            .wrap_err("fail to show prompt dialog")?
+            .wrap_err("failed to show prompt dialog")?
             .to_lowercase();
 
         // Return default

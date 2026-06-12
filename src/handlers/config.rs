@@ -1,6 +1,5 @@
-use std::fs::File;
-
 use eyre::{Context, Result};
+use tokio::runtime::Runtime;
 
 use crate::{
     cli::config::ConfigCommand,
@@ -14,48 +13,60 @@ use crate::{
 
 pub fn handle(cmd: ConfigCommand) -> Result<()> {
     match cmd {
-        ConfigCommand::Show => show()?,
-        ConfigCommand::Edit { no_reactivate } => edit(no_reactivate)?,
-        ConfigCommand::Reset { no_reactivate } => reset(no_reactivate)?,
+        ConfigCommand::Show => show(),
+        ConfigCommand::Edit { no_reactivate } => edit(no_reactivate),
+        ConfigCommand::Reset { no_reactivate } => reset(no_reactivate),
     }
-    Ok(())
 }
 
 fn show() -> Result<()> {
+    // Create async runtime
+    let rt = Runtime::new().wrap_err("failed to create async runtime")?;
+
     // Render configurations
     let contents = Config::get_instance()
+        .lock()
+        .unwrap()
         .render()
-        .wrap_err("fail to render configurations")?;
+        .wrap_err("failed to render configurations")?;
 
     // View
-    tools::view_contents(&contents, "config.yaml").wrap_err("fail to show configurations")
+    rt.block_on(async {
+        tools::view_contents(&contents, "config.yaml")
+            .await
+            .wrap_err("failed to show configurations")
+    })
 }
 
 fn edit(no_reactivate: bool) -> Result<()> {
+    // Create async runtime
+    let rt = Runtime::new().wrap_err("failed to create async runtime")?;
+
     // Render configurations
     let contents = Config::get_instance()
+        .lock()
+        .unwrap()
         .render()
-        .wrap_err("fail to render configurations")?;
+        .wrap_err("failed to render configurations")?;
 
     // Edit
-    let contents =
-        tools::edit_contents(&contents, "config.yaml").wrap_err("fail to edit configurations")?;
+    let contents = rt.block_on(async {
+        tools::edit_contents(&contents, "config.yaml")
+            .await
+            .wrap_err("failed to edit configurations")
+    })?;
 
     // Parse model
     let config = serde_saphyr::from_str_validate::<Config>(&contents)
-        .wrap_err("fail to parse configurations")?;
+        .wrap_err("failed to parse configurations")?;
 
     // Ask user
     let confirmed = dialog::confirm("Are you sure to edit the configurations?", false)
-        .wrap_err("fail to show confirm dialog")?;
+        .wrap_err("failed to show confirm dialog")?;
 
     // Do actions
     if confirmed {
-        let path = Config::get_path();
-        let file = File::create(path)
-            .wrap_err_with(|| format!("fail to create file `{}`", path.display()))?;
-        serde_json::to_writer(&file, &config)
-            .wrap_err_with(|| format!("fail to serialize value to file `{}`", path.display()))?;
+        Config::commit(config)?;
         success!("Successfully edited");
     } else {
         log!("Edit skipped");
@@ -73,11 +84,11 @@ fn edit(no_reactivate: bool) -> Result<()> {
 fn reset(no_reactivate: bool) -> Result<()> {
     // Ask user
     let confirmed = dialog::confirm("Are you sure to reset the configurations?", false)
-        .wrap_err("fail to show confirm dialog")?;
+        .wrap_err("failed to show confirm dialog")?;
 
     // Do actions
     if confirmed {
-        Config::reset().wrap_err("fail to reset configurations")?;
+        Config::reset().wrap_err("failed to reset configurations")?;
         success!("Successfully reset");
     } else {
         log!("Reset skipped");

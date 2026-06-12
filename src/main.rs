@@ -9,7 +9,10 @@ use std::io;
 use clap::{CommandFactory, Parser};
 use eyre::Result;
 
-use crate::{cli::Cli, handlers::config};
+use crate::{
+    cli::Cli,
+    handlers::{config, profile},
+};
 
 fn main() -> Result<()> {
     // Install panic hook
@@ -18,8 +21,8 @@ fn main() -> Result<()> {
     // Handle commands
     match Cli::parse() {
         Cli::Tui { .. } => todo!(),
-        Cli::Config(cmd) => config::handle(cmd)?,
-        Cli::Profile(_) => todo!(),
+        Cli::Config(cmd) => config::handle(cmd),
+        Cli::Profile(cmd) => profile::handle(cmd),
         Cli::Proxy(_) => todo!(),
         Cli::Rule(_) => todo!(),
         Cli::Connection(_) => todo!(),
@@ -29,9 +32,7 @@ fn main() -> Result<()> {
             let bin_name = cmd.get_name().to_owned();
 
             clap_complete::generate(shell, &mut cmd, bin_name, &mut io::stdout());
+            Ok(())
         }
     }
-
-    // Done
-    Ok(())
 }
