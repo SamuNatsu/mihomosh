@@ -161,3 +161,15 @@ eval "$(mihomosh shell-completion bash)"
 ```sh
 $ mihomosh proxy update
 ```
+
+### 系统代理开关(beta)
+
+目前支持Linux和Windows的系统代理开关
+
+windows可以直接使用
+
+```sh
+$ mihomosh network proxy
+```
+
+Linux下运行以上命令会在配置文件夹内生成.sh/.fish/.elv文件，请在需要的.bashrc或其他与执行文件内根据shell类型引用对应的脚本

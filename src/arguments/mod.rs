@@ -5,13 +5,14 @@ pub mod inspect;
 pub mod profile;
 pub mod proxy;
 pub mod rule_set;
+pub mod network;
 
 use clap::Parser;
 use clap_complete::Shell;
 
 use crate::arguments::{
     config::ConfigArgs, connection::ConnectionArgs, control::ControlArgs, inspect::InspectArgs,
-    profile::ProfileArgs, proxy::ProxyArgs, rule_set::RuleSetArgs,
+    profile::ProfileArgs, proxy::ProxyArgs, rule_set::RuleSetArgs, network::NetworkArgs,
 };
 
 /// A Command Line Interface for Mihomo
@@ -48,6 +49,10 @@ pub enum Args {
     /// Print/Update rule sets
     #[command(subcommand)]
     RuleSet(RuleSetArgs),
+
+    /// Manage system network
+    #[command(subcommand)]
+    Network(NetworkArgs),
 
     /// Generate shell completion
     ShellCompletion {

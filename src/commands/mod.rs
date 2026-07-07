@@ -2,6 +2,7 @@ pub mod config;
 pub mod connection;
 pub mod control;
 pub mod inspect;
+pub mod network;
 pub mod profile;
 pub mod proxy;
 pub mod rule;
