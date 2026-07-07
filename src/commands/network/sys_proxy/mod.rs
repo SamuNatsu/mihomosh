@@ -5,14 +5,18 @@ pub struct SysProxyStatus {
     pub proxy_port: Option<u16>,
 }
 
-#[cfg(target_os = "windows")]
-mod windows;
-#[cfg(target_os = "windows")]
-use windows::PlatformProxy;
-#[cfg(target_os = "linux")]
-mod linux;
-#[cfg(target_os = "linux")]
-use linux::PlatformProxy;
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "windows")] {
+        mod windows;
+        use windows::PlatformProxy;
+    } else if #[cfg(target_os = "linux")] {
+        mod linux;
+        use linux::PlatformProxy;
+    } else {
+        mod unsupported;
+        use unsupported::PlatformProxy;
+    }
+}
 
 pub struct SysProxyManager;
 

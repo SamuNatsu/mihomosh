@@ -1381,6 +1381,7 @@ dependencies = [
  "boa_engine",
  "boa_runtime",
  "bytes",
+ "cfg-if",
  "chrono",
  "clap",
  "clap_complete",
