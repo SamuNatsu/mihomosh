@@ -50,7 +50,7 @@ impl PlatformProxy {
             port,
         );
 
-        println_warn!("Manually source the script to enable proxy or add it to your .bashrc file >{}.sh", dir::get_data_dir().display());
+        println_warn!("Manually source the script to enable proxy or add it to your .bashrc file >{}/proxy.sh", dir::get_data_dir().display());
         result
     }
 
