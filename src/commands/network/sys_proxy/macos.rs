@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 
 use crate::{
     utils::dir,
-    println_secondary,
+    println_warn,
 };
 
 use super::SysProxyStatus;
@@ -50,7 +50,7 @@ impl PlatformProxy {
             port,
         );
 
-        println_secondary!("Manually source the script to enable proxy. path:{dir::get_data_dir().display()}");
+        println_warn!("Manually source the script to enable proxy. path:{}", dir::get_data_dir().display());
     }
 
 
