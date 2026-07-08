@@ -25,7 +25,7 @@ impl PlatformProxy {
     pub fn set(status: SysProxyStatus) -> Result<()> {
         let proxy_port = status.proxy_port.unwrap_or(7890);
         let result = write_scripts(proxy_port, proxy_port);
-        println_warn!("Manually source the script to enable proxy. path:{}", dir::get_data_dir().display());
+        println_warn!("Manually source the script to enable proxy or add it to your .bashrc file >{}.sh", dir::get_data_dir().display());
         result
     }
 
