@@ -3,7 +3,10 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use crate::utils::dir;
+use crate::{
+    utils::dir,
+    println_secondary,
+};
 use super::SysProxyStatus;
 
 pub struct PlatformProxy;
@@ -21,7 +24,8 @@ impl PlatformProxy {
     /// 生成代理脚本文件，用户 source 后即可启用代理
     pub fn set(status: SysProxyStatus) -> Result<()> {
         let proxy_port = status.proxy_port.unwrap_or(7890);
-        write_scripts(proxy_port, proxy_port)
+        write_scripts(proxy_port, proxy_port);
+        println_secondary!("Manually source the script to enable proxy. path:{dir::get_data_dir().display()}");
     }
 
     /// 清空脚本文件，用户 source 后无任何效果

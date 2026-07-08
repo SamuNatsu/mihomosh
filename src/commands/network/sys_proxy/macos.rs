@@ -3,7 +3,10 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use crate::utils::dir;
+use crate::{
+    utils::dir,
+    println_secondary,
+};
 
 use super::SysProxyStatus;
 
@@ -45,7 +48,9 @@ impl PlatformProxy {
         write_scripts(
             port,
             port,
-        )
+        );
+
+        println_secondary!("Manually source the script to enable proxy. path:{dir::get_data_dir().display()}");
     }
 
 
