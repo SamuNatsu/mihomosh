@@ -12,6 +12,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "linux")] {
         mod linux;
         use linux::PlatformProxy;
+    } else if #[cfg(target_os = "macos")] {
+        mod macos;
+        use macos::PlatformProxy;
     } else {
         mod unsupported;
         use unsupported::PlatformProxy;

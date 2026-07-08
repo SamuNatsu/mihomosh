@@ -164,12 +164,20 @@ $ mihomosh proxy update
 
 ### 系统代理开关(beta)
 
-目前支持Linux和Windows的系统代理开关
+目前支持Linux、Windows和MacOS的系统代理开关。
 
-windows可以直接使用
+windows可以直接使用命令，代理会写入系统设置
 
 ```sh
 $ mihomosh network proxy
 ```
 
-Linux下运行以上命令会在配置文件夹内生成.sh/.fish/.elv文件，请在需要的.bashrc或其他与执行文件内根据shell类型引用对应的脚本
+Linux和MacOS下运行以上命令会在配置文件夹内生成.sh/.fish/.elv文件，请在需要的.bashrc内根据shell类型引用对应的脚本。比如默认的bash环境添加
+
+> [!CAUTION]
+> 该方法仅对shell环境生效，Linux和MacOS的桌面环境较为混乱，对于桌面环境建议使用GUI软件。
+
+```sh
+# Set shell proxy (Provided by Mihomosh)
+source <配置文件地址>/proxy.sh
+```
