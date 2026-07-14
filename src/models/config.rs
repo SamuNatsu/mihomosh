@@ -1,21 +1,21 @@
 use std::{
+    any::Any,
+    collections::HashMap,
     fs::File,
     path::PathBuf,
     sync::{LazyLock, Mutex},
 };
 
+use askama::Template;
 use eyre::{Context, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use smart_default::SmartDefault;
-use strum::AsRefStr;
-use tinytemplate::TinyTemplate;
+use strum::{AsRefStr, Display};
 use url::Url;
 use validator::Validate;
 
-use crate::templates;
-
-#[derive(Deserialize, Serialize, SmartDefault, Validate)]
+#[derive(Deserialize, Serialize, SmartDefault, Template, Validate)]
+#[template(path = "config.template", escape = "yml")]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
     #[default = "/etc/mihomo/config.yaml"]
@@ -34,7 +34,7 @@ pub struct Config {
     pub port: u16,
 }
 
-#[derive(AsRefStr, Default, Deserialize, Serialize)]
+#[derive(AsRefStr, Default, Deserialize, Display, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
 pub enum ConfigMode {
@@ -44,7 +44,7 @@ pub enum ConfigMode {
     Direct,
 }
 
-#[derive(AsRefStr, Default, Deserialize, Serialize)]
+#[derive(AsRefStr, Default, Deserialize, Display, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
 pub enum ConfigLogLevel {
@@ -124,20 +124,15 @@ impl Config {
     }
 
     pub fn render(&self) -> Result<String> {
-        // Setup template engine
-        let mut tt = TinyTemplate::new();
-        tt.add_template("config", templates::CONFIG)
-            .wrap_err("failed to add rendering template")?;
-        tt.set_default_formatter(&|value, output| {
-            if let Value::String(str) = &value {
-                output.push_str(&serde_json::to_string(str)?);
-                Ok(())
-            } else {
-                tinytemplate::format(value, output)
-            }
-        });
+        // Setup runtime values
+        let mut values: HashMap<&str, Box<dyn Any>> = HashMap::new();
+        values.insert("rt_mihomosh_version", Box::new(env!("CARGO_PKG_VERSION")));
+        values.insert(
+            "rt_mihomo_path",
+            Box::new(self.mihomo_path.display().to_string()),
+        );
 
-        // Render configurations
-        Ok(tt.render("config", self)?)
+        // Render YAML
+        self.render_with_values(&values).map_err(Into::into)
     }
 }

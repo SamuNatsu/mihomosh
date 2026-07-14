@@ -1,0 +1,50 @@
+## Mihomosh Profile Information {% if let Ok(rt_mihomosh_version) = askama::get_value::<&str>("rt_mihomosh_version") -%}
+(mihomosh v{{ rt_mihomosh_version }})
+{%- endif %}
+
+## Profile Name
+# Type: String
+name: {{ name }}
+
+## Profile Type
+# Type: String enumerate ("remote" | "local")
+type: {{ type }}
+
+## Profile Remote URL (REQUIRED for remote profile)
+# Type: String
+{% if type.is_remote() && let Some(url) = url -%}
+url: {{ url.0 }}
+{%- else -%}
+#url: "https://example.com"
+{%- endif %}
+
+## User Agent for Updating Profile (Optional)
+# Type: String
+# Default: {% if let Ok(rt_default_ua) = askama::get_value::<&str>("rt_default_ua") -%}
+{{ rt_default_ua }}
+{%- endif %}
+{% if type.is_remote() && let Some(ua) = user_agent -%}
+user-agent: {{ ua }}
+{%- else -%}
+#user-agent: {% if let Ok(rt_default_ua) = askama::get_value::<&str>("rt_default_ua") -%}
+{{ rt_default_ua }}
+{%- endif %}
+{%- endif %}
+
+## Proxy for Updating Profile (Optional)
+# Type: String enumerate ("none" | "system" | "mihomo")
+# Default: "none"
+{% if type.is_remote() && let Some(proxy) = update_proxy -%}
+update-proxy: {{ proxy }}
+{%- else -%}
+#update-proxy: "none"
+{%- endif %}
+
+## If Allow Invalid Certificates for Updating (Optional)
+# Type: Boolean
+# Default: false
+{% if type.is_remote() && let Some(allow) = allow_invalid_certs -%}
+allow-invalid-certs: {{ allow }}
+{%- else -%}
+#allow-invalid-certs: false
+{%- endif %}

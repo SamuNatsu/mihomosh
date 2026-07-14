@@ -1,7 +1,6 @@
 mod cli;
 mod handlers;
 mod models;
-mod templates;
 mod utils;
 
 use std::io;

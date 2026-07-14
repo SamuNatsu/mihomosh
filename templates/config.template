@@ -1,0 +1,48 @@
+## Mihomosh Configuration {% if let Ok(rt_mihomosh_version) = askama::get_value::<&str>("rt_mihomosh_version") -%}
+(mihomosh v{{ rt_mihomosh_version }})
+{%- endif %}
+
+## Mihomo Configuration File Path
+# Type: String
+# Example: "/etc/mihomo/config.yaml"
+{% if let Ok(rt_mihomo_path) = askama::get_value::<String>("rt_mihomo_path") -%}
+mihomo-path: {{ rt_mihomo_path }}
+{%- endif %}
+
+## Mihomo RESTful API URL
+# Type: String
+# Example: "http://127.0.0.1:9090"
+mihomo-api: {{ mihomo_api }}
+
+## Mihomo RESTful API Secret (Optional)
+# Type: String
+# Example: "your-secret"
+{% if let Some(secret) = mihomo_secret -%}
+mihomo-secret: {{ secret }}
+{%- else -%}
+#mihomo-secret: "your-secret"
+{%- endif %}
+
+## Proxy Mode
+# Type: String enumerate ("rule" | "global" | "direct")
+mode: {{ mode }}
+
+## Allow LAN
+# Type: Boolean
+allow-lan: {{ allow_lan }}
+
+## Allow IPv6
+# Type: Boolean
+allow-ipv6: {{ allow_ipv6 }}
+
+## Unified Delay
+# Type: Boolean
+unified-delay: {{ unified_delay }}
+
+## Log Level
+# Type: String enumerate ("silent" | "error" | "warning" | "info" | "debug")
+log-level: {{ log_level }}
+
+## Mixed Port
+# Type: uint16
+port: {{ port }}

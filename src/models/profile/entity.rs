@@ -1,9 +1,10 @@
+use askama::Template;
 use eyre::Result;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use smart_default::SmartDefault;
-use strum::{AsRefStr, EnumIs};
+use strum::{AsRefStr, Display, EnumIs};
 use url::Url;
 use validator::{Validate, ValidationError};
 
@@ -11,7 +12,10 @@ pub const DEFAULT_USER_AGENT: &str =
     concat!("mihomosh/v", env!("CARGO_PKG_VERSION"), " (clash-verge)");
 
 #[sea_orm::model]
-#[derive(Clone, Debug, DeriveEntityModel, Deserialize, Serialize, SmartDefault, Validate)]
+#[derive(
+    Clone, Debug, DeriveEntityModel, Deserialize, Serialize, SmartDefault, Template, Validate,
+)]
+#[template(path = "profile.template", escape = "yml")]
 #[serde(rename_all = "kebab-case")]
 #[validate(schema(function = "Self::validate"))]
 #[sea_orm(table_name = "profile")]
@@ -51,6 +55,7 @@ pub struct Model {
     Default,
     DeriveActiveEnum,
     Deserialize,
+    Display,
     EnumIs,
     EnumIter,
     Eq,
@@ -71,7 +76,17 @@ pub enum ProfileType {
 }
 
 #[derive(
-    Clone, Copy, Debug, Default, DeriveActiveEnum, Deserialize, EnumIter, Eq, PartialEq, Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    DeriveActiveEnum,
+    Deserialize,
+    Display,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Serialize,
 )]
 #[serde(rename_all = "kebab-case")]
 #[sea_orm(
